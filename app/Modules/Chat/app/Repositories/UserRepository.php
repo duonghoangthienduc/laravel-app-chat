@@ -14,11 +14,11 @@ final readonly class UserRepository{
 	}
 
 	public function getUserById(int $id)
-	: User|null{
-		return $this->model->where('id', $id)->firstOr(fn() => null);
+	: ?User{
+		return $this->model->where('id', $id)->firstOr(fn() => NULL);
 	}
 
-	public function getUserForChat($authUserId, $search)
+	public function getUserForChat(int $authUserId, string $search)
 	: LengthAwarePaginator{
 		return $this->model::query()
 		                   ->where('id', '!=', $authUserId)
