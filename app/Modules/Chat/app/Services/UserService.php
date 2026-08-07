@@ -12,7 +12,7 @@ final readonly class UserService{
 	){
 	}
 
-	public function getUserForChat($authUserId, $search)
+	public function getUserForChat(int $authUserId, string $search)
 	: LengthAwarePaginator{
 		return $this->user->getUserForChat($authUserId, $search);
 	}

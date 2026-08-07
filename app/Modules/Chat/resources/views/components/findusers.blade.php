@@ -1,17 +1,14 @@
-<style>
-	.start-chat-btn {
-		transition: background-color .2s ease, box-shadow .2s ease, transform .1s ease;
-        cursor: pointer;
-	}
-	.start-chat-btn:hover {
-		background-color: #819aac;
-		color: #fff;
-	}
-	.start-chat-btn:active {
-		transform: scale(.96);
-	}
-</style>
 <div class="h-full flex flex-col">
+    <style>
+		.start-chat-btn {
+			transition: background-color .2s ease, box-shadow .2s ease, transform .1s ease;
+			cursor: pointer;
+		}
+		.start-chat-btn:hover {
+			background-color: #819aac;
+			color: #fff;
+		}
+    </style>
     <!-- Header -->
     <div class="px-8 pt-10 pb-6">
         <h1 class="text-[26px] font-bold text-white tracking-tight">New Chat</h1>
@@ -36,7 +33,7 @@
     </div>
 
     <!-- Section Label -->
-    <div class="px-8 pb-4">
+    <div class="px-8 py-2">
         <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">People &mdash; {{ $users->total() }}</span>
     </div>
 
