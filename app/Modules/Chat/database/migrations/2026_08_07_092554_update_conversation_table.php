@@ -11,11 +11,8 @@ return new class extends Migration{
 	 */
 	public function up()
 	: void{
-		Schema::create('participant', function (Blueprint $table){
-			$table->id();
-			$table->uuid('conversation_id');
-			$table->integer('user_id');
-			$table->timestamps();
+		Schema::table('conversation', function (Blueprint $table){
+			$table->timestamp('last_message_at')->nullable();
 		});
 	}
 
@@ -24,6 +21,8 @@ return new class extends Migration{
 	 */
 	public function down()
 	: void{
-		Schema::dropIfExists('participant');
+		Schema::table('conversation', function (Blueprint $table){
+			$table->dropColumn('last_message_at');
+		});
 	}
 };

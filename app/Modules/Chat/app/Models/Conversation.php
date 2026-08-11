@@ -2,10 +2,13 @@
 
 namespace Modules\Chat\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Table('conversation')]
 class Conversation extends Model{
@@ -36,5 +39,27 @@ class Conversation extends Model{
 	public function participants()
 	: HasMany{
 		return $this->hasMany(Participant::class, 'conversation_id', 'uuid');
+	}
+
+	public function users()
+	: HasManyThrough{
+		return $this->hasManyThrough(
+			User::class,
+			Participant::class,
+			'conversation_id',
+			'id',
+			'id',
+			'user_id'
+		);
+	}
+
+	public function lastMessage()
+	: HasOne{
+		return $this->hasOne(Message::class, 'conversation_id')->latestOfMany();
+	}
+
+	public function messages()
+	: HasMany{
+		return $this->hasMany(Message::class, 'conversation_id');
 	}
 }
