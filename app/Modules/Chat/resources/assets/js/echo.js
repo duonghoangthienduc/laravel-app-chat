@@ -18,7 +18,7 @@ window.Echo = new Echo({
 	},
 });
 
-function getCsrfTokenFromCookie() {
+export function getCsrfTokenFromCookie() {
 	const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
 	return match ? decodeURIComponent(match[1]) : null;
 }

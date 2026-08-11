@@ -17,6 +17,8 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
     command: ["php-fpm"]
     networks:
@@ -47,6 +49,8 @@ services:
     depends_on:
       app:
         condition: service_healthy
+      reverb:
+        condition: service_started
     restart: unless-stopped
 
   db:
@@ -99,9 +103,9 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     command: php -d max_execution_time=0 artisan reverb:start --host=0.0.0.0 --port=8080
-    ports:
-      - "8080:8080"
     networks:
       - chat-network
     depends_on:
@@ -129,6 +133,8 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     command: php -d max_execution_time=0 artisan queue:work --tries=3 --sleep=1
     networks:
       - chat-network

@@ -1,6 +1,7 @@
 /* global Alpine */
 
 import './echo.js';
+import {getCsrfTokenFromCookie} from "./echo.js";
 
 function registerChatInbox() {
 	Alpine.data('chatInbox', (userId, initialConversationId = null) => ({
@@ -110,10 +111,7 @@ function registerChatInbox() {
 			await fetch(`/api/v1/chat/conversations/${conv.id}/read`, { // ← sửa URL
 				method: 'PATCH',
 				credentials: 'include', // ← thêm
-				headers: {'X-XSRF-TOKEN': getCsrfTokenFromCookie()}, // ← sửa
-			                                                         // cách
-			                                                         // lấy
-			                                                         // CSRF
+				headers: {'X-XSRF-TOKEN': getCsrfTokenFromCookie()},
 			});
 			conv.unread = false;
 		},
