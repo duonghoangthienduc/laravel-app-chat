@@ -11,10 +11,12 @@ return new class extends Migration{
 	 */
 	public function up()
 	: void{
-		Schema::create('participant', function (Blueprint $table){
+		Schema::create('message', function (Blueprint $table){
 			$table->id();
 			$table->uuid('conversation_id');
-			$table->integer('user_id');
+			$table->integer('sender_id');
+			$table->text('content');
+			$table->string('status')->default('sending')->nullable();
 			$table->timestamps();
 		});
 	}
@@ -24,6 +26,6 @@ return new class extends Migration{
 	 */
 	public function down()
 	: void{
-		Schema::dropIfExists('participant');
+		Schema::dropIfExists('message');
 	}
 };

@@ -3,38 +3,39 @@
 namespace Modules\Chat\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Modules\Chat\Services\ConversationService;
 
 class ChatController extends Controller{
 
-	public function __construct(){
+	public function __construct(
+		private readonly ConversationService $conversationService,
+	){
 	}
 
 	/**
 	 * Display a listing of the resource.
 	 */
 	public function index(){
-		return view('chat::index');
+		return view('chat::index', [
+			'activeConversationId' => NULL
+		]);
 	}
-
-	/**
-	 * Show the form for creating a new resource.
-	 */
-
-	public function create(){
-		return view('chat::index');
-	}
-
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request){ }
 
 	/**
 	 * Show the specified resource.
 	 */
-	public function show($id){
-		return view('chat::show');
+	public function show(int $id){
+		$conversation = $this->conversationService->getConversationById($id);
+
+		abort_if(
+			!$conversation->participants->contains('user_id', Auth::id()),
+			403
+		);
+
+		return view('chat::index', [
+			'activeConversationId' => $conversation->conversation_id,
+		]);
 	}
 
 	/**
@@ -43,14 +44,4 @@ class ChatController extends Controller{
 	public function edit($id){
 		return view('chat::edit');
 	}
-
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, $id){ }
-
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy($id){ }
 }

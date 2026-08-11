@@ -4,6 +4,7 @@ namespace Modules\Chat\Repositories;
 
 use App\Core\Repositories\AbstractRepository;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Chat\Interfaces\ConversationRepositoryInterface;
 use Modules\Chat\Models\Conversation;
@@ -51,5 +52,16 @@ class ConversationRepository extends AbstractRepository implements ConversationR
 
 			return $conversation;
 		});
+	}
+
+	public function getConversationsByUser(int $userId)
+	: Collection{
+		return $this->model::query()
+		                   ->whereHas('participants', fn($q) => $q->where('user_id', $userId))
+		                   ->with([
+			                   'participants.user:id,name',
+		                   ])
+		                   ->orderByDesc('last_message_at')
+		                   ->get();
 	}
 }

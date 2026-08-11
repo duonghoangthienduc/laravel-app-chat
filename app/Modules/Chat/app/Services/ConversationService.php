@@ -3,6 +3,8 @@
 namespace Modules\Chat\Services;
 
 use Exception;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Modules\Chat\Models\Conversation;
 use Modules\Chat\Repositories\ConversationRepository;
 use Modules\Chat\Repositories\UserRepository;
@@ -35,5 +37,15 @@ readonly class ConversationService{
 		}
 
 		return $conversation;
+	}
+
+	public function getConversationById(string $uuid)
+	: ?Model{
+		return $this->conversationRepository->find($uuid);
+	}
+
+	public function getConversationByUserId(int $authId)
+	: Collection{
+		return $this->conversationRepository->getConversationsByUser($authId);
 	}
 }
