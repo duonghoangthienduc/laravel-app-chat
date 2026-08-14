@@ -1,99 +1,64 @@
 <x-layouts::app :title="__('Chat Area')">
-    <div x-data="chatInbox({{ auth()->id() }}, {{ $activeConversationId ?? 'null' }})" class="flex h-[calc(100vh-4rem)] overflow-hidden">
-        {{-- Cột trái: Conversation list --}}
-        <div class="w-full max-w-xs shrink-0 border-e border-zinc-200 dark:border-zinc-700 flex flex-col">
-            <div class="border-b border-zinc-200 p-4 dark:border-zinc-700">
-                <flux:heading size="lg">{{ __('Conversation') }}</flux:heading>
-                <flux:input x-model="search" icon="magnifying-glass" :placeholder="__('Search here')" class="mt-3"/>
-            </div>
+    <div x-data="chatList({{ auth()->id() }}, @js($activeConversationId))" class="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
+        {{-- Header --}}
+        <div class="border-b border-zinc-800 py-5">
+            <p class="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-400">
+                {{ __('Chat') }}
+            </p>
+            <flux:heading size="lg" class="text-white">{{ __('Conversation') }}</flux:heading>
 
-            <div class="flex-1 overflow-y-auto">
-                <template x-for="conv in filteredConversations" :key="conv.id">
-                    <div class="relative flex items-start gap-3 px-4 py-3" :class="activeId === conv.id ? 'bg-blue-600 text-white' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'">
-                        <button @click="selectConversation(conv.id)" class="flex flex-1 items-start gap-3 text-left min-w-0">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-300 text-sm font-medium text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200" x-text="getInitials(conv.other_name)"></div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="truncate font-medium" x-text="conv.other_name"></span>
-                                    <span class="shrink-0 text-xs opacity-70" x-text="conv.last_message_by"></span>
-                                </div>
-                                <p class="truncate text-sm opacity-80" x-text="conv.last_message"></p>
-                            </div>
-                        </button>
-						<?php /*
-                        <div x-data="{ open: false }" class="relative shrink-0">
-                            <button @click.stop="open = !open" class="p-1 opacity-60 hover:opacity-100">
-                                <flux:icon name="ellipsis-vertical" variant="micro"/>
-                            </button>
-                            <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 z-10 mt-1 w-40 rounded-lg bg-blue-600 py-1 text-white shadow-lg" style="display: none;">
-                                <button @click.stop="blockUser(conv); open = false" class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-blue-700">
-                                    <flux:icon name="no-symbol" variant="micro"/> {{ __('Block') }}
-                                </button>
-                                <button @click.stop="deleteConversation(conv); open = false" class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-blue-700">
-                                    <flux:icon name="trash" variant="micro"/> {{ __('Delete') }}
-                                </button>
-                                <button @click.stop="markAsRead(conv); open = false" class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-blue-700">
-                                    <flux:icon name="envelope-open" variant="micro"/> {{ __('Mark as Read') }}
-                                </button>
-                            </div>
-                        </div>
-                        */ ?>
-                    </div>
-                </template>
-
-                <template x-if="filteredConversations.length === 0">
-                    <p class="p-4 text-sm text-zinc-400">{{ __('No conversations yet.') }}</p>
-                </template>
+            <div class="relative mt-3 max-w-md">
+                <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/>
+                </svg>
+                <input x-model="search" type="text" placeholder="{{ __('Search here') }}" class="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 py-2.5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 transition focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/10"/>
             </div>
         </div>
 
-        {{-- Cột giữa: Message thread --}}
-        <div class="min-w-0 flex-1 flex flex-col">
-            <template x-if="!activeId">
-                <div class="flex h-full items-center justify-center text-zinc-400">
-                    {{ __('Select a conversation to start chatting') }}
+        {{-- Body — flex-1 để chiếm hết phần còn lại, làm nơi neo cho spinner/empty state canh giữa --}}
+        <div class="flex-1 overflow-y-auto">
+            <template x-if="loading">
+                <div class="flex h-full flex-col items-center justify-center gap-4">
+                    <svg width="40" height="40" class="animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <p class="text-sm text-zinc-500">{{ __('Loading conversations...') }}</p>
                 </div>
             </template>
 
-            <template x-if="activeId">
-                <div class="flex h-full flex-col">
-                    {{-- Header --}}
-                    <div class="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-300 text-sm font-medium text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200" x-text="getInitials(activeConversation?.other_name)"></div>
-                        <div class="min-w-0">
-                            <flux:heading size="sm" x-text="activeConversation?.other_name"></flux:heading>
-                            <flux:text size="sm" class="text-emerald-500">{{ __('Online') }}</flux:text>
-                        </div>
-
-                        <flux:spacer/>
-
-                        <flux:button icon="video-camera" variant="ghost"/>
-                        <flux:button icon="phone" variant="ghost"/>
-                    </div>
-
-                    {{-- Messages --}}
-                    <div x-ref="scrollBox" class="flex-1 space-y-4 overflow-y-auto p-4">
-                        <template x-if="loadingMessages">
-                            <p class="text-center text-sm text-zinc-400">{{ __('Loading...') }}</p>
-                        </template>
-
-                        <template x-for="msg in messages" :key="msg.id">
-                            <div class="flex items-end gap-2" :class="msg.sender_id === userId ? 'flex-row-reverse' : ''">
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-300 text-xs font-medium text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200" x-text="getInitials(msg.sender_name)"></div>
-                                <div class="max-w-md">
-                                    <div class="rounded-2xl px-4 py-2 text-sm" :class="msg.sender_id === userId ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-700'" x-text="msg.content"></div>
-                                    <p class="mt-1 text-xs text-zinc-400" :class="msg.sender_id === userId ? 'text-right' : ''" x-text="msg.created_at_human"></p>
+            <template x-if="!loading">
+                <div class="divide-y divide-white/5 border-t border-white/5">
+                    <template x-for="conv in filteredConversations" :key="conv.id">
+                        <a x-data="{ hovered: false }" @mouseenter="hovered = true" @mouseleave="hovered = false" :href="`/chat/inbox/${conv.id}`" wire:navigate class="group relative flex w-full items-center gap-4 px-4 py-3.5 text-left" style="transition: background-color .15s ease;" :style="conv.id === activeId
+                        ? 'background: rgba(99,102,241,.1);' : (hovered ? 'background: #27272a;' : 'background: transparent;')">
+                            <span class="absolute left-0 top-1/2 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-400 transition-all duration-200" :class="conv.id === activeId ? 'opacity-100' : 'opacity-0'"></span>
+                            <div class="flex shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-white shadow-lg shadow-black/20 ring-2 ring-white/10" style="width:52px;height:52px;" :style="avatarStyle(conv.other_name)" x-text="getInitials(conv.other_name)"></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-baseline justify-between gap-2">
+                                    <span class="truncate text-[15px] font-semibold text-white" x-text="conv.other_name"></span>
+                                    <span class="shrink-0 text-[11px] text-zinc-500" x-text="formatTime(conv.last_message_at)"></span>
                                 </div>
+                                <p class="mt-1 truncate text-sm text-zinc-400">
+                                    <span x-show="conv.last_message" class="text-zinc-500">You: </span><span x-text="conv.last_message || '{{ __('Say hi \uD83D\uDC4B') }}'"></span>
+                                </p>
                             </div>
-                        </template>
-                    </div>
+                        </a>
+                    </template>
+                </div>
+            </template>
 
-                    {{-- Input --}}
-                    <form @submit.prevent="send()" class="flex items-center gap-2 border-t border-zinc-200 p-3 dark:border-zinc-700">
-                        <flux:button icon="plus" variant="ghost" type="button"/>
-                        <flux:input x-model="draft" :placeholder="__('Type a message here')" class="flex-1"/>
-                        <flux:button icon="paper-airplane" type="submit" variant="primary"/>
-                    </form>
+            <template x-if="!loading && filteredConversations.length === 0">
+                <div class="flex h-full flex-col items-center justify-center gap-3 text-center">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900">
+                        <svg width="26" height="26" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" class="text-zinc-600">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-zinc-300" x-text="search ? '{{ __('No results found') }}' : '{{ __('No conversations yet') }}'"></p>
+                        <p class="mt-1 text-xs text-zinc-600" x-show="search" x-text="`{{ __('Nothing matches') }} \u201c${search}\u201d`"></p>
+                    </div>
                 </div>
             </template>
         </div>

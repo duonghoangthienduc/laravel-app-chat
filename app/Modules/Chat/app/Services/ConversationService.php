@@ -5,6 +5,7 @@ namespace Modules\Chat\Services;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Modules\Chat\Events\ConversationCreated;
 use Modules\Chat\Models\Conversation;
 use Modules\Chat\Repositories\ConversationRepository;
 use Modules\Chat\Repositories\UserRepository;
@@ -15,7 +16,6 @@ readonly class ConversationService{
 		private ConversationRepository $conversationRepository,
 		private UserRepository $userRepository
 	){
-
 	}
 
 	/**
@@ -34,6 +34,8 @@ readonly class ConversationService{
 
 		if (!$conversation){
 			$conversation = $this->conversationRepository->newPrivateChat($user, $authId);
+
+			event(new ConversationCreated($conversation));
 		}
 
 		return $conversation;
