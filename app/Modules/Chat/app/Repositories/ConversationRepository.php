@@ -60,6 +60,7 @@ class ConversationRepository extends AbstractRepository implements ConversationR
 		                   ->whereHas('participants', fn($q) => $q->where('user_id', $userId))
 		                   ->with([
 			                   'participants.user:id,name',
+			                   'lastMessage.sender:id,name',
 		                   ])
 		                   ->orderByDesc('last_message_at')
 		                   ->get();

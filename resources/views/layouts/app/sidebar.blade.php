@@ -10,27 +10,7 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-            </flux:sidebar.nav>
-
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Chat')" class="grid">
-                    <flux:sidebar.item icon="chat-bubble-left-right" :href="route('chat')" :current="request()->routeIs('chat')" wire:navigate>
-                        {{ __('New Chat') }}
-                    </flux:sidebar.item>
-
-                    <flux:sidebar.item icon="inbox" :href="route('chat.inbox')" :current="request()->routeIs('chat.inbox')" wire:navigate>
-                        {{ __('Inbox') }}
-                        <!-- Optional: unread badge -->
-
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-            </flux:sidebar.nav>
+            @include('layouts.partials.sidebar-nav')
 
             <flux:spacer />
 

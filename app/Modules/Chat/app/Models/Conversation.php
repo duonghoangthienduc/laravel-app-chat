@@ -26,13 +26,15 @@ class Conversation extends Model{
 	 */
 	protected $fillable = [
 		'conversation_name',
-		'is_group',
+		'last_message_at',
+		'is_group'
 	];
 
 	protected function casts()
 	: array{
 		return [
-			'is_group' => 'boolean',
+			'is_group'        => 'boolean',
+			'last_message_at' => 'datetime',
 		];
 	}
 

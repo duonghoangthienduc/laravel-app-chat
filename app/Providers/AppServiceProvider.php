@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\Navigation\Facades\Navigation;
+use App\Support\Navigation\NavigationRegistry;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -16,7 +19,7 @@ class AppServiceProvider extends ServiceProvider{
 	 */
 	public function register()
 	: void{
-		//
+		$this->app->singleton(NavigationRegistry::class);
 	}
 
 	/**
@@ -25,6 +28,7 @@ class AppServiceProvider extends ServiceProvider{
 	public function boot()
 	: void{
 		$this->configureDefaults();
+		AliasLoader::getInstance()->alias('Navigation', Navigation::class);
 	}
 
 	/**

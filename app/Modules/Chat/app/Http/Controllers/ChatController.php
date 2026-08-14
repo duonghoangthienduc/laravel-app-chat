@@ -25,16 +25,16 @@ class ChatController extends Controller{
 	/**
 	 * Show the specified resource.
 	 */
-	public function show(int $id){
-		$conversation = $this->conversationService->getConversationById($id);
+	public function show(string $uuid){
+		$conversation = $this->conversationService->getConversationById($uuid);
 
 		abort_if(
 			!$conversation->participants->contains('user_id', Auth::id()),
 			403
 		);
 
-		return view('chat::index', [
-			'activeConversationId' => $conversation->conversation_id,
+		return view('chat::pages.show', [
+			'activeConversationId' => $conversation->uuid,
 		]);
 	}
 

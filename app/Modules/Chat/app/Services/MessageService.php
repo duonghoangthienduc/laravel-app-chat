@@ -30,6 +30,7 @@ class MessageService{
 		]);
 
 		event(new MessageSent($message));
+
 		return $message->load('sender:id,name');
 	}
 }

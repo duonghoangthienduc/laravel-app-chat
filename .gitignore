@@ -27,3 +27,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/public/build-chat/assets/app-CT7ydCtb.js
+/public/build-chat/manifest.json

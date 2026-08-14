@@ -28,7 +28,15 @@ class MessageSent implements ShouldBroadcastNow{
 	 */
 	public function broadcastOn()
 	: array{
-		return [new PrivateChannel('conversation.' . $this->message->conversation_id)];
+		$this->message->loadMissing('conversation.participants');
+
+		$channels = [new PrivateChannel('conversation.' . $this->message->conversation_id)];
+
+		foreach ($this->message->conversation->participants as $participant){
+			$channels[] = new PrivateChannel('App.Models.User.' . $participant->user_id);
+		}
+
+		return $channels;
 	}
 
 	public function broadcastAs()
@@ -38,6 +46,8 @@ class MessageSent implements ShouldBroadcastNow{
 
 	public function broadcastWith()
 	: array{
-		return (new MessageResource($this->message))->resolve();
+		$this->message->loadMissing('sender:id,name');
+
+		return new MessageResource($this->message)->resolve();
 	}
 }
