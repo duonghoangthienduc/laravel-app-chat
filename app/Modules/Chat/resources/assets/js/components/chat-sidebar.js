@@ -1,4 +1,4 @@
-import {avatarStyle, getInitials} from '../utils/avatar.js';
+import {avatarSideBarStyle, getInitials} from '../utils/avatar.js';
 
 export default function chatSidebar(userId, initialConversations = [], visibleLimit = 10) {
 	return {
@@ -9,7 +9,7 @@ export default function chatSidebar(userId, initialConversations = [], visibleLi
 		visibleLimit,
 
 		getInitials,
-		avatarStyle,
+		avatarSideBarStyle,
 
 		get hasMore() {
 			return this.conversations.length > this.visibleLimit;

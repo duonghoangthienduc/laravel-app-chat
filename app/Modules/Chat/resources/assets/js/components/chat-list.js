@@ -10,6 +10,10 @@ export default function chatList(userId, activeId = null) {
 		loading: true,
 		now: Date.now(),
 
+		// --- Scroll tracking / jump-to-top ---
+		isAtTop: true,
+		newActivityCount: 0,
+
 		getInitials,
 		avatarStyle,
 
@@ -24,6 +28,24 @@ export default function chatList(userId, activeId = null) {
 			return this.conversations.filter(c =>
 				c.other_name?.toLowerCase().includes(this.search.toLowerCase())
 			);
+		},
+
+		onScroll() {
+			const el = this.$refs.listBox;
+			if (!el) {
+				return;
+			}
+
+			this.isAtTop = el.scrollTop < 40;
+
+			if (this.isAtTop) {
+				this.newActivityCount = 0;
+			}
+		},
+
+		jumpToTop() {
+			this.newActivityCount = 0;
+			this.$refs.listBox?.scrollTo({top: 0, behavior: 'smooth'});
 		},
 
 		async init() {
@@ -58,7 +80,12 @@ export default function chatList(userId, activeId = null) {
 				other_user_id: other?.id,
 				last_message: payload.last_message,
 				last_message_at: payload.last_message_at,
+				last_message_sender_id: payload.last_message_sender_id,
 			});
+
+			if (!this.isAtTop) {
+				this.newActivityCount++;
+			}
 		},
 
 		handleMessageSent(payload) {
@@ -71,9 +98,14 @@ export default function chatList(userId, activeId = null) {
 			const conv = {...this.conversations[index]};
 			conv.last_message = payload.content;
 			conv.last_message_at = payload.created_at_iso;
+			conv.last_message_sender_id = payload.sender_id;
 
 			this.conversations.splice(index, 1);
 			this.conversations.unshift(conv);
+
+			if (!this.isAtTop) {
+				this.newActivityCount++;
+			}
 		},
 	};
 }
