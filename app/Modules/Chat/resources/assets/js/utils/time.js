@@ -30,3 +30,35 @@ export function formatRelativeTime(isoString, now = Date.now()) {
 
 	return new Intl.DateTimeFormat('en-GB', options).format(date);
 }
+
+export function formatDayLabel(isoString, now = Date.now()) {
+	if (!isoString) {
+		return '';
+	}
+
+	const date = new Date(isoString);
+	const nowDate = new Date(now);
+
+	const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+	const diffDays = Math.round((startOfDay(nowDate) - startOfDay(date)) / 86_400_000);
+
+	const dateOptions = {day: 'numeric', month: 'long'};
+	if (date.getFullYear() !== nowDate.getFullYear()) {
+		dateOptions.year = 'numeric';
+	}
+	const fullDate = new Intl.DateTimeFormat('en-GB', dateOptions).format(date);
+
+	if (diffDays === 0) {
+		return `Today`;
+	}
+	if (diffDays === 1) {
+		return `Yesterday, ${fullDate}`;
+	}
+
+	if (diffDays > 1 && diffDays < 7) {
+		const weekday = new Intl.DateTimeFormat('en-GB', {weekday: 'long'}).format(date);
+		return `${weekday}, ${fullDate}`;
+	}
+
+	return fullDate;
+}

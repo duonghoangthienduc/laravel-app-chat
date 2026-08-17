@@ -10,7 +10,10 @@ export default defineConfig({
 	},
 	plugins: [
 		laravel({
-			input: ['resources/assets/js/app.js'],
+			input: [
+				'resources/assets/js/app.js',
+				'resources/assets/js/sidebar.js'
+			],
 			publicDirectory: path.resolve(import.meta.dirname, '../../../public'),
 			buildDirectory: 'build-chat',
 		}),

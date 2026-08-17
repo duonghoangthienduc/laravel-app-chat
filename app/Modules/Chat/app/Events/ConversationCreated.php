@@ -38,14 +38,15 @@ class ConversationCreated implements ShouldBroadcastNow{
 	public function broadcastWith()
 	: array{
 		return [
-			'id'              => $this->conversation->uuid,
-			'is_group'        => $this->conversation->is_group,
-			'participants'    => $this->conversation->participants->map(fn($p) => [
+			'id'                     => $this->conversation->uuid,
+			'is_group'               => $this->conversation->is_group,
+			'participants'           => $this->conversation->participants->map(fn($p) => [
 				'id'   => $p->user_id,
 				'name' => $p->user?->name,
 			])->values(),
-			'last_message'    => NULL,
-			'last_message_at' => NULL,
+			'last_message'           => NULL,
+			'last_message_at'        => NULL,
+			'last_message_sender_id' => NULL,
 		];
 	}
 }

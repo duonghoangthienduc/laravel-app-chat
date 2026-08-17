@@ -1,5 +1,6 @@
 import {avatarStyle, getInitials} from '../utils/avatar.js';
 import {getCsrfTokenFromCookie} from '../echo.js';
+import {formatDayLabel} from '../utils/time.js';
 
 export default function chatInbox(userId, initialConversationId = null) {
 	return {
@@ -14,6 +15,14 @@ export default function chatInbox(userId, initialConversationId = null) {
 		typingTimeout: null,
 		typingWhisperTimer: null,
 
+		connectionState: 'connecting',
+
+		isNearBottom: true,
+		newMessageCount: 0,
+
+		nextCursor: null,
+		loadingOlder: false,
+
 		getInitials,
 		avatarStyle,
 
@@ -26,24 +35,6 @@ export default function chatInbox(userId, initialConversationId = null) {
 			);
 		},
 
-		get groupedMessages() {
-			const groups = [];
-			for (const msg of this.messages) {
-				const lastGroup = groups[groups.length - 1];
-				if (lastGroup && lastGroup.sender_id === msg.sender_id) {
-					lastGroup.items.push(msg);
-				}
-				else {
-					groups.push({
-						sender_id: msg.sender_id,
-						sender_name: msg.sender_name,
-						items: [msg]
-					});
-				}
-			}
-			return groups;
-		},
-
 		get activeConversation() {
 			return this.conversations.find(c => c.id === this.activeId) ?? null;
 		},
@@ -53,6 +44,88 @@ export default function chatInbox(userId, initialConversationId = null) {
 				window.Echo.leave(`conversation.${this.activeId}`);
 			}
 			this.activeId = null;
+			if (this.resizeObserver) {
+				this.resizeObserver.disconnect();
+			}
+		},
+
+		get groupedByDay() {
+			const days = [];
+			for (const msg of this.messages) {
+				const label = formatDayLabel(msg.created_at_iso);
+				let lastDay = days[days.length - 1];
+				if (!lastDay || lastDay.label !== label) {
+					lastDay = {label, groups: []};
+					days.push(lastDay);
+				}
+				const lastGroup = lastDay.groups[lastDay.groups.length - 1];
+				if (lastGroup && lastGroup.sender_id === msg.sender_id) {
+					lastGroup.items.push(msg);
+				}
+				else {
+					lastDay.groups.push({
+						sender_id: msg.sender_id,
+						sender_name: msg.sender_name,
+						items: [msg]
+					});
+				}
+			}
+			return days;
+		},
+
+		onScroll() {
+			const el = this.$refs.scrollBox;
+			if (!el) {
+				return;
+			}
+
+			const bottomThreshold = 150;
+			this.isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < bottomThreshold;
+			if (this.isNearBottom) {
+				this.newMessageCount = 0;
+			}
+
+			const topThreshold = 80;
+			if (el.scrollTop < topThreshold && this.nextCursor && !this.loadingOlder) {
+				this.loadOlderMessages();
+			}
+		},
+
+		async loadOlderMessages() {
+			if (!this.nextCursor || this.loadingOlder) {
+				return;
+			}
+
+			this.loadingOlder = true;
+			const el = this.$refs.scrollBox;
+			const prevScrollHeight = el.scrollHeight;
+			const prevScrollTop = el.scrollTop;
+
+			const res = await fetch(
+				`/api/v1/chat/conversations/${this.activeId}/messages?cursor=${this.nextCursor}`,
+				{credentials: 'include'}
+			);
+			const data = await res.json();
+			const older = data.data.reverse();
+
+			this.messages = [...older, ...this.messages];
+			this.nextCursor = data.meta?.next_cursor ?? null;
+			this.loadingOlder = false;
+
+			this.$nextTick(() => {
+				el.style.scrollBehavior = 'auto';
+				el.scrollTop = el.scrollHeight - prevScrollHeight + prevScrollTop;
+				requestAnimationFrame(() => {
+					el.style.scrollBehavior = 'smooth';
+				});
+
+				this.fillViewportIfNeeded();
+			});
+		},
+
+		jumpToNewest() {
+			this.newMessageCount = 0;
+			this.scrollToBottom();
 		},
 
 		subscribeToConversation(id) {
@@ -62,36 +135,38 @@ export default function chatInbox(userId, initialConversationId = null) {
 						if (!message.sender_name) {
 							message.sender_name = this.activeConversation?.other_name;
 						}
-						this.otherTyping = false; // tin nhắn thật đã tới, ẩn
-						                          // typing indicator ngay
+						this.otherTyping = false;
 						this.messages.push(message);
-						this.$nextTick(() => this.scrollToBottom());
+
+						if (this.isNearBottom) {
+							this.$nextTick(() => this.scrollToBottom());
+						}
+						else {
+							this.newMessageCount++;
+						}
 					}
 				})
 				.listenForWhisper('typing', (e) => {
 					if (e.user_id === this.userId) {
 						return;
-					} // bỏ qua whisper của chính mình
+					}
 
 					this.otherTyping = true;
-					this.$nextTick(() => this.scrollToBottom());
+					if (this.isNearBottom) {
+						this.$nextTick(() => this.scrollToBottom());
+					}
 
 					clearTimeout(this.typingTimeout);
 					this.typingTimeout = setTimeout(() => {
 						this.otherTyping = false;
-					}, 3000); // tự ẩn nếu 3s không có whisper mới (người kia
-					          // dừng gõ)
+					}, 3000);
 				});
 		},
 
-		// Gọi từ @input trên ô nhập — throttle để không spam whisper mỗi ký tự
 		notifyTyping() {
-			if (!this.activeId) {
+			if (!this.activeId || this.typingWhisperTimer) {
 				return;
 			}
-			if (this.typingWhisperTimer) {
-				return;
-			} // đang trong khoảng chờ, bỏ qua
 
 			window.Echo.private(`conversation.${this.activeId}`).whisper('typing', {
 				user_id: this.userId,
@@ -99,11 +174,42 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 			this.typingWhisperTimer = setTimeout(() => {
 				this.typingWhisperTimer = null;
-			}, 2000); // tối đa 1 whisper mỗi 2s
+			}, 2000);
+		},
+
+		initConnectionState() {
+			const conn = window.Echo?.connector?.pusher?.connection;
+			if (!conn) {
+				return;
+			}
+
+			this.connectionState = conn.state;
+			conn.bind('state_change', (states) => {
+				this.connectionState = states.current;
+			});
+		},
+
+		setupResizeObserver() {
+			const el = this.$refs.scrollBox;
+			if (!el) {
+				return;
+			}
+
+			let timer;
+			this.resizeObserver = new ResizeObserver(() => {
+				clearTimeout(timer);
+				timer = setTimeout(() => {
+					if (this.isNearBottom) {
+						this.scrollToBottom();
+					}
+				}, 80);
+			});
+			this.resizeObserver.observe(el);
 		},
 
 		async init() {
 			await fetch('/sanctum/csrf-cookie', {credentials: 'include'});
+			this.initConnectionState();
 
 			const res = await fetch('/api/v1/chat/conversations', {credentials: 'include'});
 			const json = await res.json();
@@ -113,6 +219,8 @@ export default function chatInbox(userId, initialConversationId = null) {
 				await this.loadMessages(this.activeId);
 				this.subscribeToConversation(this.activeId);
 			}
+
+			this.$nextTick(() => this.setupResizeObserver());
 		},
 
 		async selectConversation(id) {
@@ -129,15 +237,22 @@ export default function chatInbox(userId, initialConversationId = null) {
 		async loadMessages(conversationId) {
 			this.loadingMessages = true;
 			this.messages = [];
+			this.isNearBottom = true;
+			this.newMessageCount = 0;
+			this.nextCursor = null;
 
 			const res = await fetch(`/api/v1/chat/conversations/${conversationId}/messages`, {
 				credentials: 'include',
 			});
 			const data = await res.json();
 			this.messages = data.data.reverse();
+			this.nextCursor = data.meta?.next_cursor ?? null;
 			this.loadingMessages = false;
 
-			this.$nextTick(() => this.scrollToBottom());
+			this.$nextTick(() => {
+				this.scrollToBottom();
+				this.fillViewportIfNeeded();
+			});
 		},
 
 		async send() {
@@ -148,7 +263,6 @@ export default function chatInbox(userId, initialConversationId = null) {
 			const content = this.draft;
 			this.draft = '';
 
-			// Optimistic: hiện tin nhắn ngay, không chờ server
 			const tempId = `temp-${Date.now()}`;
 			this.messages.push({
 				id: tempId,
@@ -156,9 +270,11 @@ export default function chatInbox(userId, initialConversationId = null) {
 				sender_name: null,
 				content,
 				created_at: null,
+				created_at_iso: new Date().toISOString(),
 				_pending: true,
 				_failed: false,
 			});
+			this.newMessageCount = 0;
 			this.$nextTick(() => this.scrollToBottom());
 
 			try {
@@ -177,13 +293,13 @@ export default function chatInbox(userId, initialConversationId = null) {
 				}
 
 				const saved = await res.json();
-				const index = this.messages.findIndex(m => m.id === tempId);
+				const index = this.messages.findIndex((m) => m.id === tempId);
 				if (index !== -1) {
 					this.messages.splice(index, 1, saved.data);
 				}
 			}
 			catch (e) {
-				const index = this.messages.findIndex(m => m.id === tempId);
+				const index = this.messages.findIndex((m) => m.id === tempId);
 				if (index !== -1) {
 					this.messages[index]._pending = false;
 					this.messages[index]._failed = true;
@@ -194,7 +310,22 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		scrollToBottom() {
-			this.$refs.scrollBox.scrollTop = this.$refs.scrollBox.scrollHeight;
+			const el = this.$refs.scrollBox;
+			if (!el) {
+				return;
+			}
+			el.scrollTo({top: el.scrollHeight, behavior: 'smooth'});
+		},
+
+		fillViewportIfNeeded() {
+			const el = this.$refs.scrollBox;
+			if (!el || !this.nextCursor || this.loadingOlder) {
+				return;
+			}
+
+			if (el.scrollHeight <= el.clientHeight) {
+				this.loadOlderMessages();
+			}
 		},
 	};
 }

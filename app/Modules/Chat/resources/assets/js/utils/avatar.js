@@ -26,5 +26,10 @@ function avatarColor(name) {
 
 export function avatarStyle(name) {
 	const [from, to] = avatarColor(name);
-	return `background: linear-gradient(135deg, ${from}, ${to});height: 1.5rem; width: 1.5rem;`;
+	return `background: linear-gradient(135deg, ${from}, ${to});height: 2.25rem; width: 2.25rem;`;
+}
+
+export function avatarSideBarStyle(name) {
+	const [from, to] = avatarColor(name);
+	return `background: linear-gradient(135deg, ${from}, ${to});height: 1.25rem; width: 1.25rem;`;
 }
