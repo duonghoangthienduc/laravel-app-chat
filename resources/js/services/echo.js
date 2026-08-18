@@ -3,10 +3,16 @@ import Pusher from 'pusher-js';
 
 export function getCsrfTokenFromCookie() {
 	const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+
 	return match ? decodeURIComponent(match[1]) : null;
 }
 
-if (!window.Echo) {
+export function getEcho() {
+
+	if (window.Echo) {
+		return window.Echo;
+	}
+
 	window.Pusher = Pusher;
 	window.Echo = new Echo({
 		broadcaster: 'reverb',
@@ -23,4 +29,6 @@ if (!window.Echo) {
 			},
 		},
 	});
+
+	return window.Echo;
 }

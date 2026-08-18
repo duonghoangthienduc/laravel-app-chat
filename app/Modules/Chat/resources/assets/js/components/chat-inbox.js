@@ -1,8 +1,10 @@
 import {avatarStyle, getInitials} from '../utils/avatar.js';
-import {getCsrfTokenFromCookie} from '../echo.js';
+import {getCsrfTokenFromCookie, getEcho} from "@/services/echo.js";
 import {formatDayLabel} from '../utils/time.js';
 
 export default function chatInbox(userId, initialConversationId = null) {
+	const echo = getEcho();
+
 	return {
 		userId,
 		conversations: [],
@@ -41,7 +43,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 		closeConversation() {
 			if (this.activeId) {
-				window.Echo.leave(`conversation.${this.activeId}`);
+				echo.leave(`conversation.${this.activeId}`);
 			}
 			this.activeId = null;
 			if (this.resizeObserver) {
@@ -129,7 +131,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		subscribeToConversation(id) {
-			window.Echo.private(`conversation.${id}`)
+			echo.private(`conversation.${id}`)
 				.listen('.message.sent', (message) => {
 					if (message.sender_id !== this.userId) {
 						if (!message.sender_name) {
@@ -168,7 +170,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 				return;
 			}
 
-			window.Echo.private(`conversation.${this.activeId}`).whisper('typing', {
+			echo.private(`conversation.${this.activeId}`).whisper('typing', {
 				user_id: this.userId,
 			});
 
@@ -178,7 +180,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		initConnectionState() {
-			const conn = window.Echo?.connector?.pusher?.connection;
+			const conn = echo?.connector?.pusher?.connection;
 			if (!conn) {
 				return;
 			}
@@ -216,6 +218,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 			this.conversations = json.data;
 
 			if (this.activeId) {
+				await this.ensureConversationLoaded(this.activeId);
 				await this.loadMessages(this.activeId);
 				this.subscribeToConversation(this.activeId);
 			}
@@ -223,9 +226,22 @@ export default function chatInbox(userId, initialConversationId = null) {
 			this.$nextTick(() => this.setupResizeObserver());
 		},
 
+		async ensureConversationLoaded(id) {
+			if (this.conversations.some(c => c.id === id)) {
+				return;
+			}
+
+			const res = await fetch(`/api/v1/chat/conversations/${id}`, {credentials: 'include'});
+			if (!res.ok) {
+				return;
+			}
+			const json = await res.json();
+			this.conversations.unshift(json.data);
+		},
+
 		async selectConversation(id) {
 			if (this.activeId) {
-				window.Echo.leave(`conversation.${this.activeId}`);
+				echo.leave(`conversation.${this.activeId}`);
 			}
 
 			this.activeId = id;

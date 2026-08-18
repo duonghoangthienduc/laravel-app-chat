@@ -6,7 +6,7 @@
                     {{ $item['label'] }}
                 </flux:sidebar.item>
 
-                @if ($item['children']->isNotEmpty())
+                @if ($item['has_children_resolver'])
                     @include($item['children_view'], ['children' => $item['children']])
                 @endif
             @endforeach
