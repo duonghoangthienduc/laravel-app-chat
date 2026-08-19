@@ -1,6 +1,9 @@
 import {avatarSideBarStyle, getInitials} from '../utils/avatar.js';
+import {getEcho} from "@/services/echo.js";
 
 export default function chatSidebar(userId, initialConversations = [], visibleLimit = 10) {
+	const echo = getEcho();
+
 	return {
 		userId,
 		conversations: initialConversations,
@@ -28,7 +31,7 @@ export default function chatSidebar(userId, initialConversations = [], visibleLi
 		},
 
 		init() {
-			window.Echo.private(`App.Models.User.${this.userId}`)
+			echo.private(`App.Models.User.${this.userId}`)
 				.listen('.conversation.created', (payload) => this.handleConversationCreated(payload))
 				.listen('.message.sent', (payload) => this.handleMessageSent(payload));
 		},

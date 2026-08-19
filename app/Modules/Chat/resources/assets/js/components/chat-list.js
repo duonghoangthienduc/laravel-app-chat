@@ -1,7 +1,10 @@
 import {avatarStyle, getInitials} from '../utils/avatar.js';
 import {formatRelativeTime} from '../utils/time.js';
+import {getEcho} from "@/services/echo.js";
 
 export default function chatList(userId, activeId = null) {
+	const echo = getEcho();
+
 	return {
 		userId,
 		activeId,
@@ -61,7 +64,7 @@ export default function chatList(userId, activeId = null) {
 				this.now = Date.now();
 			}, 30_000);
 
-			window.Echo.private(`App.Models.User.${this.userId}`)
+			echo.private(`App.Models.User.${this.userId}`)
 				.listen('.conversation.created', (payload) => this.handleConversationCreated(payload))
 				.listen('.message.sent', (payload) => this.handleMessageSent(payload));
 		},

@@ -45,9 +45,9 @@
                         </div>
                     </template>
 
-                    <template x-if="!loadingMessages && messages.length === 0 && !otherTyping">
+                    {{-- Case: conversation mới, chưa resolve được trong danh sách (đang "setting up") --}}
+                    <template x-if="!loadingMessages && messages.length === 0 && !otherTyping && !activeConversation">
                         <div class="flex h-full flex-col items-center justify-center gap-5 px-6 pb-20 text-center">
-                            <!-- Live setup indicator -->
                             <svg width="36" height="36" class="animate-spin" style="color:#818cf8;" fill="none" viewBox="0 0 24 24">
                                 <circle style="opacity:.2" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
                                 <path style="opacity:.9" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -57,6 +57,21 @@
                                 <p class="leading-relaxed text-zinc-600">
                                     {{ __('Preparing your secure chat environment. This will only take a moment.') }}
                                 </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Case: conversation đã xác nhận, thật sự chưa có tin nhắn --}}
+                    <template x-if="!loadingMessages && messages.length === 0 && !otherTyping && activeConversation">
+                        <div class="flex h-full flex-col items-center justify-center gap-3 px-6 pb-20 text-center">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/60">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" class="text-zinc-500">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 0 1-4.32-1.1L3 21l1.25-3.75A8.96 8.96 0 0 1 3 12c0-4.97 4.03-9 9-9s9 4.03 9 9Z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xs text-zinc-500">
+                                {{ __('No messages yet') }}
+                                <p class="leading-relaxed text-zinc-600">{{ __('Say hi to start the conversation.') }}</p>
                             </div>
                         </div>
                     </template>

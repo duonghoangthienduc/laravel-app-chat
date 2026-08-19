@@ -25,10 +25,11 @@ class NavigationRegistry{
 
 	protected function resolveItem(array $item)
 	: array{
-		$patterns = $item['active_on'] ?? [$item['route']];
-		$children = collect();
+		$patterns            = $item['active_on'] ?? [$item['route']];
+		$children            = collect();
+		$hasChildrenResolver = isset($item['children_resolver']);
 
-		if (isset($item['children_resolver'])){
+		if ($hasChildrenResolver){
 			$resolver = app($item['children_resolver']);
 
 			if ($resolver instanceof ResolvesNavChildren){
@@ -37,19 +38,16 @@ class NavigationRegistry{
 		}
 
 		return [
-			'label'         => __($item['label']),
-			'icon'          => $item['icon'],
-			'href'          => route($item['route']),
-			'active'        => request()->routeIs($patterns),
-			'children'      => $children,
-			'children_view' => $this->resolveChildrenView($item['children_view'] ?? NULL),
+			'label'                 => __($item['label']),
+			'icon'                  => $item['icon'],
+			'href'                  => route($item['route']),
+			'active'                => request()->routeIs($patterns),
+			'children'              => $children,
+			'children_view'         => $this->resolveChildrenView($item['children_view'] ?? NULL),
+			'has_children_resolver' => $hasChildrenResolver,
 		];
 	}
 
-	/**
-	 * Module tự khai báo view riêng qua 'children_view'. Nếu không khai báo,
-	 * hoặc view khai báo không tồn tại (config sai/typo), fallback về template mặc định.
-	 */
 	protected function resolveChildrenView(?string $view)
 	: string{
 		if ($view === NULL){

@@ -12,16 +12,14 @@ export default defineConfig({
 		laravel({
 			input: [
 				'resources/assets/js/app.js',
-				'resources/assets/js/sidebar.js'
 			],
 			publicDirectory: path.resolve(import.meta.dirname, '../../../public'),
-			buildDirectory: 'build-chat',
+			buildDirectory: 'build-log',
 		}),
 	],
 	resolve: {
 		alias: {
 			'@': path.resolve(import.meta.dirname, '../../../resources/js'),
-			'@status': path.resolve(import.meta.dirname, '../../../app/Modules/Log/resources/assets/js'),
 		},
 	},
 });
