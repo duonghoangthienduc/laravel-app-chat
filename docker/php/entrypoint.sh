@@ -27,10 +27,10 @@ if [ -f artisan ] && [ "$RUN_MIGRATIONS" = "true" ]; then
 fi
 
 # Build frontend assets nếu chưa có (chỉ chạy trên service được đánh dấu BUILD_ASSETS)
-if [ -f package.json ] && [ "$BUILD_ASSETS" = "true" ] && [ ! -f public/build/manifest.json ]; then
+if [ -f package.json ] && [ "$BUILD_ASSETS" = "true" ]; then
   echo "📦 Installing npm dependencies and building frontend assets..."
   npm ci
-  npm run build
+  npm run build:all
   echo "✅ Frontend assets built."
 fi
 
