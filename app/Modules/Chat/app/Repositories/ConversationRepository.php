@@ -38,7 +38,8 @@ class ConversationRepository extends AbstractRepository implements ConversationR
 	: Conversation{
 		return DB::transaction(function () use ($user, $participantId){
 			$conversation = $this->model::create([
-				'is_group' => FALSE,
+				'is_group'        => FALSE,
+				'last_message_at' => now(),
 			]);
 
 			$conversation->participants()->createMany([

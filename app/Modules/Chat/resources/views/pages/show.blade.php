@@ -11,12 +11,7 @@
                 <div class="flex min-w-0 flex-1 items-center gap-3">
                     <div class="relative shrink-0">
                         <div class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-white/10" :style="avatarStyle(activeConversation?.other_name)" x-text="getInitials(activeConversation?.other_name)"></div>
-                        {{-- Ambient connection dot --}}
-                        <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0b0d10] transition-colors duration-500" :class="{
-                                    'bg-emerald-400 animate-pulse': connectionState === 'connected',
-                                    'bg-amber-400': connectionState === 'connecting',
-                                    'bg-red-500': connectionState === 'unavailable' || connectionState === 'disconnected',
-                                }"></span>
+                        <span x-show="!activeConversation?.is_group && activeConversation?.other_user_id" class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0b0d10]" :class="$store.onlinePresence?.isOnline(activeConversation?.other_user_id) ? 'bg-emerald-400' : 'bg-zinc-700'"></span>
                     </div>
                     <div class="min-w-0">
                         <p class="truncate text-[15px] font-semibold text-white" x-text="activeConversation?.other_name"></p>
@@ -105,7 +100,7 @@
                                                     <div style="display:flex; flex-direction:column; gap:6px;" :class="group.sender_id === userId ? 'items-end' : 'items-start'">
                                                         <template x-for="(msg, idx) in group.items" :key="msg.id">
                                                             <div x-transition:enter="transition ease-out duration-350" x-transition:enter-start="opacity-0 translate-y-2 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
-                                                                <div style="word-break:break-word; overflow-wrap:break-word; max-width:100%; width:fit-content; border-radius:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);" :style="(group.sender_id === userId ? 'padding:10px 16px 10px 16px; background:rgba(99,102,241,.85);' : 'padding:10px 16px 10px 16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);') + 'word-break:break-word; overflow-wrap:break-word; max-width:100%; width:fit-content; border-radius:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);'" class="text-[15px] leading-relaxed" :class="[group.sender_id === userId ? 'text-white' : 'text-zinc-100', msg._pending ? 'opacity-60' : '', msg._failed ? 'ring-2 ring-red-500/60' : '']" x-text="msg.content"></div>
+                                                                <div :style="(group.sender_id === userId ? 'padding:10px 16px 10px 16px; background:rgba(99,102,241,.85);' : 'padding:10px 16px 10px 16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);') + 'word-break:break-word; white-space:pre-wrap; overflow-wrap:break-word; max-width:100%; width:fit-content; border-radius:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);'" class="text-[15px] leading-relaxed" :class="[group.sender_id === userId ? 'text-white' : 'text-zinc-100', msg._pending ? 'opacity-60' : '', msg._failed ? 'ring-2 ring-red-500/60' : '']" x-text="msg.content"></div>
                                                                 <div class="mt-0.5 flex items-center gap-1 px-1" x-show="group.sender_id === userId && (msg._pending || msg._failed)">
                                                                     <svg x-show="msg._pending" width="10" height="10" class="animate-spin text-zinc-500" fill="none" viewBox="0 0 24 24">
                                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -154,7 +149,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
                         </svg>
                     </button>
-                    <textarea x-model="draft" @input="notifyTyping()" @keydown.enter.prevent="send()" rows="1" placeholder="{{ __('Type a message here') }}" class="max-h-32 flex-1 resize-none bg-transparent py-1.5 text-[15px] text-white outline-none placeholder:text-zinc-600"></textarea>
+                    <textarea x-model="draft" x-ref="draftInput" @input="notifyTyping(); autoGrow()" @keydown.enter="handleEnter($event)" rows="1" placeholder="{{ __('Type a message here') }}" style="max-height: 200px; overflow-y: auto;" class="flex-1 resize-none bg-transparent py-1.5 text-[15px] text-white outline-none placeholder:text-zinc-600"></textarea>
                     <button type="button" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-white">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z"/>

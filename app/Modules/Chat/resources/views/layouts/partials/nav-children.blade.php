@@ -1,10 +1,11 @@
 @php
     $seedData = $children->map(fn ($child) => [
-        'id'      => $child['id'],
-        'label'   => $child['label'],
-        'href'    => $child['href'],
-        'active'  => $child['active'],
-        'initial' => $child['initial'],
+        'id'            => $child['id'],
+		'other_user_id' => $child['other_user_id'] ?? NULL,
+        'label'         => $child['label'],
+        'href'          => $child['href'],
+        'active'        => $child['active'],
+        'initial'       => $child['initial'],
     ])->values();
 @endphp
 
@@ -19,7 +20,10 @@
     <div x-show="open" x-transition.opacity.duration.150ms class="ml-4 space-y-0.5 border-l border-zinc-800 pl-2">
         <template x-for="conv in visibleConversations" :key="conv.id">
             <a :href="conv.href" wire:navigate class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition" :class="conv.active ? 'bg-indigo-500/15 text-white' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'">
-                <span class="relative flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-1 ring-white/10" :style="avatarSideBarStyle(conv.label)" x-text="conv.initial"></span>
+                <div class="relative flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-1 ring-white/10" :style="avatarSideBarStyle(conv.label)">
+                    <span x-text="conv.initial"></span>
+                    <span x-show="conv.other_user_id" class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-zinc-900" :class="$store.onlinePresence?.isOnline(conv.other_user_id) ? 'bg-emerald-400' : 'bg-zinc-700'"></span>
+                </div>
                 <span class="truncate" x-text="conv.label"></span>
             </a>
         </template>

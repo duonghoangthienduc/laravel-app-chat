@@ -3,21 +3,22 @@ import {getEcho} from "@/services/echo.js";
 export function initOnlinePresence() {
 	const echo = getEcho();
 
+	window.Alpine.store('onlinePresence', {
+		userIds: new Set(),
+		isOnline(id) {
+			return this.userIds.has(Number(id));
+		},
+	});
+
 	echo.join('online-users')
 		.here((users) => {
-			console.log('Currently online:', users);
-
-			// Store/update your online users.
+			window.Alpine.store('onlinePresence').userIds = new Set(users.map(u => u.id));
 		})
 		.joining((user) => {
-			console.log('User online:', user);
-
-			// Add user to your online-user state.
+			window.Alpine.store('onlinePresence').userIds.add(user.id);
 		})
 		.leaving((user) => {
-			console.log('User offline:', user);
-
-			// Remove user from your online-user state.
+			window.Alpine.store('onlinePresence').userIds.delete(user.id);
 		})
 		.error((error) => {
 			console.error('Presence channel error:', error);
