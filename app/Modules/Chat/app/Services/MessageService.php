@@ -2,18 +2,20 @@
 
 namespace Modules\Chat\Services;
 
+use Illuminate\Pagination\CursorPaginator;
 use Modules\Chat\Events\MessageSent;
-use Modules\Chat\Repositories\ConversationRepository;
-use Modules\Chat\Repositories\MessageRepository;
+use Modules\Chat\Interfaces\ConversationRepositoryInterface;
+use Modules\Chat\Interfaces\MessageRepositoryInterface;
 
-class MessageService{
+readonly class MessageService{
 
 	public function __construct(
-		private readonly MessageRepository $messageRepository,
-		private readonly ConversationRepository $conversationRepository){
+		private MessageRepositoryInterface $messageRepository,
+		private ConversationRepositoryInterface $conversationRepository){
 	}
 
-	public function getMessages(string $conversationId, int $limit = 30){
+	public function getMessages(string $conversationId, int $limit = 30)
+	: CursorPaginator{
 		return $this->messageRepository->getForConversation($conversationId, $limit);
 	}
 

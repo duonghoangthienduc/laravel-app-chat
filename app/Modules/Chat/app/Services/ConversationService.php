@@ -6,15 +6,15 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Modules\Chat\Events\ConversationCreated;
+use Modules\Chat\Interfaces\ConversationRepositoryInterface;
+use Modules\Chat\Interfaces\UserRepositoryInterface;
 use Modules\Chat\Models\Conversation;
-use Modules\Chat\Repositories\ConversationRepository;
-use Modules\Chat\Repositories\UserRepository;
 
 readonly class ConversationService{
 
 	public function __construct(
-		private ConversationRepository $conversationRepository,
-		private UserRepository $userRepository
+		private ConversationRepositoryInterface $conversationRepository,
+		private UserRepositoryInterface $userRepository
 	){
 	}
 
