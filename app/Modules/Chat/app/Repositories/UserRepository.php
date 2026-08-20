@@ -2,15 +2,17 @@
 
 namespace Modules\Chat\Repositories;
 
+use App\Core\Repositories\AbstractRepository;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Modules\Chat\Interfaces\UserRepositoryInterface;
 
-final readonly class UserRepository{
+class UserRepository extends AbstractRepository implements UserRepositoryInterface{
 
 	public function __construct(
-		private User $model,
+		User $model,
 	){
-
+		parent::__construct($model);
 	}
 
 	public function getUserById(int $id)

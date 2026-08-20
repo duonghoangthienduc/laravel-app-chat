@@ -2,45 +2,59 @@
 
 namespace Modules\Chat\Providers;
 
+use Modules\Chat\Interfaces\ConversationRepositoryInterface;
+use Modules\Chat\Interfaces\MessageRepositoryInterface;
+use Modules\Chat\Interfaces\ParticipantRepositoryInterface;
+use Modules\Chat\Interfaces\UserRepositoryInterface;
+use Modules\Chat\Repositories\ConversationRepository;
+use Modules\Chat\Repositories\MessageRepository;
+use Modules\Chat\Repositories\ParticipantRepository;
+use Modules\Chat\Repositories\UserRepository;
 use Nwidart\Modules\Support\ModuleServiceProvider;
-use Illuminate\Console\Scheduling\Schedule;
 
-class ChatServiceProvider extends ModuleServiceProvider
-{
-    /**
-     * The name of the module.
-     */
-    protected string $name = 'Chat';
+class ChatServiceProvider extends ModuleServiceProvider{
 
-    /**
-     * The lowercase version of the module name.
-     */
-    protected string $nameLower = 'chat';
+	/**
+	 * The name of the module.
+	 */
+	protected string $name = 'Chat';
 
-    /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
+	/**
+	 * The lowercase version of the module name.
+	 */
+	protected string $nameLower = 'chat';
 
-    /**
-     * Provider classes to register.
-     *
-     * @var string[]
-     */
-    protected array $providers = [
-        EventServiceProvider::class,
-        RouteServiceProvider::class,
-    ];
+	/**
+	 * Command classes to register.
+	 *
+	 * @var string[]
+	 */
+	// protected array $commands = [];
 
-    /**
-     * Define module schedules.
-     * 
-     * @param $schedule
-     */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+	/**
+	 * Provider classes to register.
+	 *
+	 * @var string[]
+	 */
+	protected array $providers = [
+		EventServiceProvider::class,
+		RouteServiceProvider::class,
+	];
+
+	/**
+	 * Define module schedules.
+	 *
+	 * @param $schedule
+	 */
+	// protected function configureSchedules(Schedule $schedule): void
+	// {
+	//     $schedule->command('inspire')->hourly();
+	// }
+
+	public $bindings = [
+		ConversationRepositoryInterface::class => ConversationRepository::class,
+		ParticipantRepositoryInterface::class  => ParticipantRepository::class,
+		MessageRepositoryInterface::class      => MessageRepository::class,
+		UserRepositoryInterface::class         => UserRepository::class,
+	];
 }

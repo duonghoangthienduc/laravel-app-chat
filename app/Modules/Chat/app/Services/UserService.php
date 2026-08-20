@@ -3,12 +3,12 @@
 namespace Modules\Chat\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Modules\Chat\Repositories\UserRepository;
+use Modules\Chat\Interfaces\UserRepositoryInterface;
 
 final readonly class UserService{
 
 	public function __construct(
-		private UserRepository $user,
+		private UserRepositoryInterface $user,
 	){
 	}
 
