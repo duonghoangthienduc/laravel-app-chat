@@ -46,6 +46,7 @@ export default function chatSidebar(userId, initialConversations = [], visibleLi
 
 			this.conversations.unshift({
 				id: payload.id,
+				other_user_id: other?.id ?? null,
 				label: name,
 				href: `/chat/inbox/${payload.id}`,
 				active: false,

@@ -3,6 +3,7 @@ import {initOnlinePresence} from '@status/online-presence.js';
 
 function register() {
 	window.Alpine.data('chatSidebar', chatSidebar);
+	initOnlinePresence();
 }
 
 if (window.Alpine) {
@@ -11,5 +12,3 @@ if (window.Alpine) {
 else {
 	document.addEventListener('alpine:init', register);
 }
-
-initOnlinePresence();

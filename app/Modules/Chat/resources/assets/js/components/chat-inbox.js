@@ -278,6 +278,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 			const content = this.draft;
 			this.draft = '';
+			this.$nextTick(() => this.autoGrow());
 
 			const tempId = `temp-${Date.now()}`;
 			this.messages.push({
@@ -291,7 +292,6 @@ export default function chatInbox(userId, initialConversationId = null) {
 				_failed: false,
 			});
 			this.newMessageCount = 0;
-			this.$nextTick(() => this.scrollToBottom());
 
 			try {
 				const res = await fetch(`/api/v1/chat/conversations/${this.activeId}/messages`, {
@@ -342,6 +342,23 @@ export default function chatInbox(userId, initialConversationId = null) {
 			if (el.scrollHeight <= el.clientHeight) {
 				this.loadOlderMessages();
 			}
+		},
+
+		autoGrow() {
+			const el = this.$refs.draftInput;
+			if (!el) {
+				return;
+			}
+			el.style.height = 'auto';
+			el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+		},
+
+		handleEnter(e) {
+			if (e.shiftKey) {
+				return; // để mặc định trình duyệt tự xuống dòng
+			}
+			e.preventDefault();
+			this.send();
 		},
 	};
 }

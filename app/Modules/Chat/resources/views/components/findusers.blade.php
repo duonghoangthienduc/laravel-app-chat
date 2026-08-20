@@ -93,20 +93,10 @@
                                     <div style="width: 56px; height: 56px; border-radius: 9999px; background: linear-gradient(135deg, {{ $fromHex }}, {{ $toHex }}); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #fff; box-shadow: 0 0 0 4px #18181b; flex-shrink: 0;" aria-hidden="true">
                                         {{ $initial }}
                                     </div>
-                                    @if(!is_null($isOnline))
-                                        <span style="position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; border-radius: 9999px; border: 3px solid #18181b; background: {{ $isOnline ? '#34d399' : '#52525b' }};"></span>
-                                    @endif
+                                    <span x-data :style="`position:absolute;bottom:0;right:0;width:14px;height:14px;border-radius:9999px;border:3px solid #18181b;background:${$store.onlinePresence?.isOnline({{ $user->id }}) ? '#34d399' : '#52525b'}`"></span>
                                 </div>
                                 <!-- Status -->
-                                @if($isOnline)
-                                    <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
-                                            Online
-                                    </span>
-                                @else
-                                    <span class="rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
-                                            Offline
-                                    </span>
-                                @endif
+                                <span x-data x-text="$store.onlinePresence?.isOnline({{ $user->id }}) ? 'Online' : 'Offline'" :class="$store.onlinePresence?.isOnline({{ $user->id }}) ? 'rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400' : 'rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-500'"></span>
                             </div>
                             <div class="wrap-user">
                                 <h3 class="truncate text-base font-semibold text-white">
@@ -141,7 +131,7 @@
                                 </svg>
                                 Start Chat
                             </span>
-                                                    <span wire:loading.flex wire:target="startConversation({{ $user->id }})" class="flex items-center gap-2">
+                            <span wire:loading.flex wire:target="startConversation({{ $user->id }})" class="flex items-center gap-2">
                                 <svg width="16" height="16" class="animate-spin" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
