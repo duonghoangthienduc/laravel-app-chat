@@ -92,6 +92,10 @@
             </flux:toast.group>
         @endpersist
 
+        {{ $scripts ?? '' }}
+
+        @stack('scripts')
+
         @fluxScripts
     </body>
 </html>

@@ -8,16 +8,11 @@ export default defineConfig({
 	build: {
 		emptyOutDir: true,
 	},
-	plugins: [
-		laravel({
-			input: [
-				'resources/assets/js/app.js',
-				'resources/assets/js/sidebar.js'
-			],
-			publicDirectory: path.resolve(import.meta.dirname, '../../../public'),
-			buildDirectory: 'build-chat',
-		}),
-	],
+	plugins: [laravel({
+		input: ['resources/assets/js/app.js', 'resources/assets/js/sidebar.js'],
+		publicDirectory: '../../../public',   // relative to `root`, not absolute
+		buildDirectory: 'build-chat',
+	}),],
 	resolve: {
 		alias: {
 			'@': path.resolve(import.meta.dirname, '../../../resources/js'),

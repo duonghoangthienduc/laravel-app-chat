@@ -1,4 +1,5 @@
 {
+  "name": "laravel-app-chat",
   "$schema": "https://www.schemastore.org/package.json",
   "private": true,
   "type": "module",

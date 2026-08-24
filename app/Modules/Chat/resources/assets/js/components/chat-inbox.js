@@ -2,15 +2,22 @@ import {avatarStyle, getInitials} from '../utils/avatar.js';
 import {getCsrfTokenFromCookie, getEcho} from "@/services/echo.js";
 import {formatDayLabel} from '../utils/time.js';
 
-export default function chatInbox(userId, initialConversationId = null) {
+export default function chatInbox(
+	userId,
+	initialConversationId = null,
+	initialConversation = null,
+	initialMessages = [],
+	initialNextCursor = null,
+	messagesPreloaded = false
+) {
 	const echo = getEcho();
 
 	return {
 		userId,
-		conversations: [],
+		conversations: initialConversation ? [initialConversation] : [],
 		activeId: initialConversationId,
 		search: '',
-		messages: [],
+		messages: initialMessages,
 		loadingMessages: false,
 		draft: '',
 		otherTyping: false,
@@ -22,16 +29,19 @@ export default function chatInbox(userId, initialConversationId = null) {
 		isNearBottom: true,
 		newMessageCount: 0,
 
-		nextCursor: null,
+		nextCursor: initialNextCursor,
+		messagesPreloaded,
 		loadingOlder: false,
 
 		getInitials,
 		avatarStyle,
 
 		get filteredConversations() {
+
 			if (!this.search) {
 				return this.conversations;
 			}
+
 			return this.conversations.filter(c =>
 				c.other_name?.toLowerCase().includes(this.search.toLowerCase())
 			);
@@ -42,10 +52,12 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		closeConversation() {
+
 			if (this.activeId) {
 				echo.leave(`conversation.${this.activeId}`);
 			}
 			this.activeId = null;
+
 			if (this.resizeObserver) {
 				this.resizeObserver.disconnect();
 			}
@@ -53,14 +65,18 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 		get groupedByDay() {
 			const days = [];
+
 			for (const msg of this.messages) {
 				const label = formatDayLabel(msg.created_at_iso);
 				let lastDay = days[days.length - 1];
+
 				if (!lastDay || lastDay.label !== label) {
 					lastDay = {label, groups: []};
 					days.push(lastDay);
 				}
+
 				const lastGroup = lastDay.groups[lastDay.groups.length - 1];
+
 				if (lastGroup && lastGroup.sender_id === msg.sender_id) {
 					lastGroup.items.push(msg);
 				}
@@ -77,23 +93,27 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 		onScroll() {
 			const el = this.$refs.scrollBox;
+
 			if (!el) {
 				return;
 			}
 
 			const bottomThreshold = 150;
 			this.isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < bottomThreshold;
+
 			if (this.isNearBottom) {
 				this.newMessageCount = 0;
 			}
 
 			const topThreshold = 80;
+
 			if (el.scrollTop < topThreshold && this.nextCursor && !this.loadingOlder) {
 				this.loadOlderMessages();
 			}
 		},
 
 		async loadOlderMessages() {
+
 			if (!this.nextCursor || this.loadingOlder) {
 				return;
 			}
@@ -133,7 +153,9 @@ export default function chatInbox(userId, initialConversationId = null) {
 		subscribeToConversation(id) {
 			echo.private(`conversation.${id}`)
 				.listen('.message.sent', (message) => {
+
 					if (message.sender_id !== this.userId) {
+
 						if (!message.sender_name) {
 							message.sender_name = this.activeConversation?.other_name;
 						}
@@ -149,11 +171,13 @@ export default function chatInbox(userId, initialConversationId = null) {
 					}
 				})
 				.listenForWhisper('typing', (e) => {
+
 					if (e.user_id === this.userId) {
 						return;
 					}
 
 					this.otherTyping = true;
+
 					if (this.isNearBottom) {
 						this.$nextTick(() => this.scrollToBottom());
 					}
@@ -166,6 +190,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		notifyTyping() {
+
 			if (!this.activeId || this.typingWhisperTimer) {
 				return;
 			}
@@ -181,6 +206,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 		initConnectionState() {
 			const conn = echo?.connector?.pusher?.connection;
+
 			if (!conn) {
 				return;
 			}
@@ -193,6 +219,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 
 		setupResizeObserver() {
 			const el = this.$refs.scrollBox;
+
 			if (!el) {
 				return;
 			}
@@ -210,16 +237,34 @@ export default function chatInbox(userId, initialConversationId = null) {
 		},
 
 		async init() {
+
+			if (this.messagesPreloaded) {
+				this.$nextTick(() => this.scrollToBottom(true));
+			}
+
 			await fetch('/sanctum/csrf-cookie', {credentials: 'include'});
 			this.initConnectionState();
 
 			const res = await fetch('/api/v1/chat/conversations', {credentials: 'include'});
 			const json = await res.json();
-			this.conversations = json.data;
+
+			const byId = new Map(this.conversations.map(c => [c.id, c]));
+
+			for (const c of json.data) {
+				byId.set(c.id, c);
+			}
+			this.conversations = Array.from(byId.values());
 
 			if (this.activeId) {
 				await this.ensureConversationLoaded(this.activeId);
-				await this.loadMessages(this.activeId);
+
+				if (this.messagesPreloaded) {
+					this.$nextTick(() => this.fillViewportIfNeeded());
+				}
+				else {
+					await this.loadMessages(this.activeId);
+				}
+
 				this.subscribeToConversation(this.activeId);
 			}
 
@@ -266,7 +311,7 @@ export default function chatInbox(userId, initialConversationId = null) {
 			this.loadingMessages = false;
 
 			this.$nextTick(() => {
-				this.scrollToBottom();
+				this.scrollToBottom(true);
 				this.fillViewportIfNeeded();
 			});
 		},
@@ -325,12 +370,15 @@ export default function chatInbox(userId, initialConversationId = null) {
 			this.$nextTick(() => this.scrollToBottom());
 		},
 
-		scrollToBottom() {
+		scrollToBottom(instant = false) {
 			const el = this.$refs.scrollBox;
 			if (!el) {
 				return;
 			}
-			el.scrollTo({top: el.scrollHeight, behavior: 'smooth'});
+			el.scrollTo({
+				top: el.scrollHeight,
+				behavior: instant ? 'auto' : 'smooth',
+			});
 		},
 
 		fillViewportIfNeeded() {

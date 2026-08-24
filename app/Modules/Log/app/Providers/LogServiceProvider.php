@@ -2,45 +2,64 @@
 
 namespace Modules\Log\Providers;
 
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
+use Modules\Log\Http\Middleware\TrackActivity;
+use Modules\Log\Interfaces\ActivityRepositoryInterface;
+use Modules\Log\Listeners\RecordLoginActivity;
+use Modules\Log\Repositories\ActivityRepository;
 use Nwidart\Modules\Support\ModuleServiceProvider;
-use Illuminate\Console\Scheduling\Schedule;
 
-class LogServiceProvider extends ModuleServiceProvider
-{
-    /**
-     * The name of the module.
-     */
-    protected string $name = 'Log';
+class LogServiceProvider extends ModuleServiceProvider{
 
-    /**
-     * The lowercase version of the module name.
-     */
-    protected string $nameLower = 'log';
+	/**
+	 * The name of the module.
+	 */
+	protected string $name = 'Log';
 
-    /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
+	/**
+	 * The lowercase version of the module name.
+	 */
+	protected string $nameLower = 'log';
 
-    /**
-     * Provider classes to register.
-     *
-     * @var string[]
-     */
-    protected array $providers = [
-        EventServiceProvider::class,
-        RouteServiceProvider::class,
-    ];
+	/**
+	 * Command classes to register.
+	 *
+	 * @var string[]
+	 */
+	// protected array $commands = [];
 
-    /**
-     * Define module schedules.
-     * 
-     * @param $schedule
-     */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+	/**
+	 * Provider classes to register.
+	 *
+	 * @var string[]
+	 */
+	protected array $providers = [
+		EventServiceProvider::class,
+		RouteServiceProvider::class,
+	];
+
+	/**
+	 * Define module schedules.
+	 *
+	 * @param $schedule
+	 */
+	// protected function configureSchedules(Schedule $schedule): void
+	// {
+	//     $schedule->command('inspire')->hourly();
+	// }
+
+	public $bindings = [
+		ActivityRepositoryInterface::class => ActivityRepository::class,
+	];
+
+	public function boot()
+	: void{
+		parent::boot();
+
+		Route::aliasMiddleware('track.activity', TrackActivity::class);
+
+		Event::listen(Login::class, RecordLoginActivity::class);
+	}
 }

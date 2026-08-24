@@ -10,5 +10,7 @@ if (window.Alpine) {
 	registerComponents();
 }
 else {
-	document.addEventListener('alpine:init', registerComponents);
+	document.addEventListener('alpine:init', registerComponents, {
+		once: true,
+	});
 }
