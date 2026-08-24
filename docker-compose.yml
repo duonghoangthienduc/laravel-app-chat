@@ -19,8 +19,8 @@ services:
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
-    entrypoint: [ "/usr/local/bin/entrypoint.sh" ]
-    command: [ "php-fpm" ]
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command: ["php-fpm"]
     networks:
       - chat-network
     depends_on:
@@ -29,7 +29,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "sh", "-c", "nc -z 127.0.0.1 9000" ]
+      test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 9000"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -67,7 +67,7 @@ services:
     networks:
       - chat-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -81,7 +81,7 @@ services:
     networks:
       - chat-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -96,8 +96,6 @@ services:
     volumes:
       - .:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
-      - /var/www/node_modules
-      - /var/www/vendor
     env_file:
       - .env
     environment:
