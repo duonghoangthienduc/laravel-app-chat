@@ -50,5 +50,7 @@
 </div>
 
 @once('chat-sidebar-script')
-    {{ module_vite('build-chat', 'resources/assets/js/sidebar.js') }}
+    @push('scripts')
+        @vite('resources/assets/js/sidebar.js', 'build-chat')
+    @endpush
 @endonce

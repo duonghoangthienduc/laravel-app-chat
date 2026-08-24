@@ -1,5 +1,12 @@
-<x-layouts::app :title="__('Chat')">
-    <div x-data="chatInbox({{ auth()->id() }}, @js($activeConversationId))" class="flex h-[calc(100vh-4rem)] flex-col overflow-hidden transition-[filter] duration-500" :style="connectionState !== 'connected' ? 'filter:saturate(0.7) brightness(0.95);' : ''">
+<x-chat::layouts.chat :title="__('Chat')">
+    <div x-data="chatInbox(
+        {{ auth()->id() }},
+        @js($activeConversationId),
+        @js($activeConversation),
+        @js($initialMessages ?? []),
+        @js($initialNextCursor ?? NULL),
+        @js($activeConversationId !== NULL)
+    )" class="flex h-[calc(100vh-4rem)] flex-col overflow-hidden transition-[filter] duration-500" :style="connectionState !== 'connected' ? 'filter:saturate(0.7) brightness(0.95);' : ''">
         {{-- Header --}}
         <div class="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
             <a href="{{ route('chat.inbox') }}" wire:navigate class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-white">
@@ -165,6 +172,6 @@
             </div>
         </div>
     </div>
-</x-layouts::app>
+</x-chat::layouts.chat>
 
-{{ module_vite('build-chat', 'resources/assets/js/app.js') }}
+@assets{{ module_vite('build-chat', 'resources/assets/js/app.js') }}@endassets

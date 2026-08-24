@@ -11,15 +11,28 @@ for (const [mod, enabled] of Object.entries(statuses)) {
 		continue;
 	}
 
-	const cfg = path.join('app', 'Modules', mod, 'vite.config.js');
+	const modulePath = path.join('app', 'Modules', mod);
 
+	let entries;
 	try {
-		await fs.access(cfg);
-		console.log(`\n=== Building module: ${mod} ===`);
-		execSync(`npx vite build --config "${cfg}"`, {stdio: 'inherit'});
+		entries = await fs.readdir(modulePath);
 	}
 	catch {
-		// module không có vite.config.js -> bỏ qua, không lỗi
+		continue;
+	}
+
+	const viteConfigs = entries
+		.filter((file) => /^vite.*\.config\.js$/.test(file))
+		.sort();
+
+	if (viteConfigs.length === 0) {
+		continue;
+	}
+
+	for (const configFile of viteConfigs) {
+		const cfgPath = path.join(modulePath, configFile);
+		console.log(`\n=== Building module: ${mod} (${configFile}) ===`);
+		execSync(`npx vite build --config "${cfgPath}"`, {stdio: 'inherit'});
 	}
 }
 

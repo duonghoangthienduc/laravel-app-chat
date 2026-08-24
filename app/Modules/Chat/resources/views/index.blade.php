@@ -1,4 +1,4 @@
-<x-layouts::app :title="__('Chat Area')">
+<x-chat::layouts.chat :title="__('Chat Area')">
     <div x-data="chatList({{ auth()->id() }}, @js($activeConversationId))" class="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
         {{-- Header --}}
         <div class="border-b border-zinc-800 py-5">
@@ -70,6 +70,6 @@
             </button>
         </div>
     </div>
-</x-layouts::app>
+</x-chat::layouts.chat>
 
-{{ module_vite('build-chat', 'resources/assets/js/app.js') }}
+@assets{{ module_vite('build-chat', 'resources/assets/js/app.js') }}@endassets
