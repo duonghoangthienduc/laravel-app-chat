@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Support\Dashboard\DashboardWidgetRegistry;
+use App\Support\Dashboard\Facades\Dashboard;
 use App\Support\Navigation\Facades\Navigation;
 use App\Support\Navigation\NavigationRegistry;
 use Carbon\CarbonImmutable;
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider{
 	public function register()
 	: void{
 		$this->app->singleton(NavigationRegistry::class);
+		$this->app->singleton(DashboardWidgetRegistry::class);
 	}
 
 	/**
@@ -28,7 +31,10 @@ class AppServiceProvider extends ServiceProvider{
 	public function boot()
 	: void{
 		$this->configureDefaults();
-		AliasLoader::getInstance()->alias('Navigation', Navigation::class);
+		$loader = AliasLoader::getInstance();
+
+		$loader->alias('Navigation', Navigation::class);
+		$loader->alias('Dashboard', Dashboard::class);
 	}
 
 	/**

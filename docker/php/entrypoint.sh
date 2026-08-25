@@ -22,7 +22,6 @@ fi
 if [ -f package.json ] && [ "$BUILD_ASSETS" = "true" ]; then
   echo "📦 Installing npm dependencies and building frontend assets..."
   npm ci
-  npm install
   npm run build:all
   echo "✅ Frontend assets built."
 fi
