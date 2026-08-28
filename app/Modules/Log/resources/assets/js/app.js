@@ -8,7 +8,5 @@ if (window.Alpine) {
 	registerComponents();
 }
 else {
-	document.addEventListener('alpine:init', registerComponents, {
-		once: true,
-	});
+	document.addEventListener('alpine:init', registerComponents);
 }

@@ -3,6 +3,7 @@
 namespace Modules\Chat\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Modules\OptionalModule;
 use Illuminate\Support\Facades\Auth;
 use Modules\Chat\Services\ConversationService;
 use Modules\Chat\Services\MessageService;
@@ -45,6 +46,7 @@ class ChatController extends Controller{
 			'activeConversation'   => new ConversationResource($conversation),
 			'initialMessages'      => array_reverse($items),
 			'initialNextCursor'    => $messages->nextCursor()?->encode(),
+			'initialMedia'         => OptionalModule::isActive('Media'),
 		]);
 	}
 

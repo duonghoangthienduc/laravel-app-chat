@@ -19,8 +19,9 @@ class MessageResource extends JsonResource{
 			'sender_name'     => $this->whenLoaded('sender', fn() => $this->sender?->name),
 			'content'         => $this->content,
 			'status'          => $this->status,
-			'created_at'      => $this->created_at?->format('g:i a'), // giữ cho bubble chat — giờ:phút
-			'created_at_iso'  => $this->created_at?->toISOString(),   // ← thêm — dùng để tính relative time
+			'created_at'      => $this->created_at?->format('g:i a'),
+			'created_at_iso'  => $this->created_at?->toISOString(),
+			'media'           => $this->media_items ?? [],
 		];
 	}
 }

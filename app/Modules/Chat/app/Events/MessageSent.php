@@ -46,8 +46,6 @@ class MessageSent implements ShouldBroadcastNow{
 
 	public function broadcastWith()
 	: array{
-		$this->message->loadMissing('sender:id,name');
-
 		return new MessageResource($this->message)->resolve();
 	}
 }

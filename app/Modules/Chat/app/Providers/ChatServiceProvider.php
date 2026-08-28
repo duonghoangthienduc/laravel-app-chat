@@ -3,10 +3,12 @@
 namespace Modules\Chat\Providers;
 
 use Modules\Chat\Interfaces\ConversationRepositoryInterface;
+use Modules\Chat\Interfaces\MessageMediaRepositoryInterface;
 use Modules\Chat\Interfaces\MessageRepositoryInterface;
 use Modules\Chat\Interfaces\ParticipantRepositoryInterface;
 use Modules\Chat\Interfaces\UserRepositoryInterface;
 use Modules\Chat\Repositories\ConversationRepository;
+use Modules\Chat\Repositories\MessageMediaRepository;
 use Modules\Chat\Repositories\MessageRepository;
 use Modules\Chat\Repositories\ParticipantRepository;
 use Modules\Chat\Repositories\UserRepository;
@@ -53,6 +55,7 @@ class ChatServiceProvider extends ModuleServiceProvider{
 
 	public $bindings = [
 		ConversationRepositoryInterface::class => ConversationRepository::class,
+		MessageMediaRepositoryInterface::class => MessageMediaRepository::class,
 		ParticipantRepositoryInterface::class  => ParticipantRepository::class,
 		MessageRepositoryInterface::class      => MessageRepository::class,
 		UserRepositoryInterface::class         => UserRepository::class,

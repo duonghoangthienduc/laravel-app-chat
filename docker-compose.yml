@@ -8,6 +8,8 @@ services:
     volumes:
       - .:/var/www
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - /var/www/node_modules
+      - node_modules_data:/var/www/node_modules
     env_file:
       - .env
     environment:
@@ -148,6 +150,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  node_modules_data:
   pgdata:
 
 networks:

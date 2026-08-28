@@ -2,18 +2,12 @@ import {avatarStyle, getInitials} from '../utils/avatar.js';
 import {getCsrfTokenFromCookie, getEcho} from "@/services/echo.js";
 import {formatDayLabel} from '../utils/time.js';
 
-export default function chatInbox(
-	userId,
-	initialConversationId = null,
-	initialConversation = null,
-	initialMessages = [],
-	initialNextCursor = null,
-	messagesPreloaded = false
-) {
+export default function chatInbox(userId, initialConversationId = null, mediaEnabled = false, initialConversation = null, initialMessages = [], initialNextCursor = null, messagesPreloaded = false) {
 	const echo = getEcho();
 
 	return {
 		userId,
+		mediaEnabled,
 		conversations: initialConversation ? [initialConversation] : [],
 		activeId: initialConversationId,
 		search: '',
@@ -33,6 +27,9 @@ export default function chatInbox(
 		messagesPreloaded,
 		loadingOlder: false,
 
+		pendingMedia: [],
+		isSendingMedia: false,
+
 		getInitials,
 		avatarStyle,
 
@@ -42,9 +39,7 @@ export default function chatInbox(
 				return this.conversations;
 			}
 
-			return this.conversations.filter(c =>
-				c.other_name?.toLowerCase().includes(this.search.toLowerCase())
-			);
+			return this.conversations.filter(c => c.other_name?.toLowerCase().includes(this.search.toLowerCase()));
 		},
 
 		get activeConversation() {
@@ -123,10 +118,7 @@ export default function chatInbox(
 			const prevScrollHeight = el.scrollHeight;
 			const prevScrollTop = el.scrollTop;
 
-			const res = await fetch(
-				`/api/v1/chat/conversations/${this.activeId}/messages?cursor=${this.nextCursor}`,
-				{credentials: 'include'}
-			);
+			const res = await fetch(`/api/v1/chat/conversations/${this.activeId}/messages?cursor=${this.nextCursor}`, {credentials: 'include'});
 			const data = await res.json();
 			const older = data.data.reverse();
 
@@ -317,13 +309,18 @@ export default function chatInbox(
 		},
 
 		async send() {
-			if (!this.draft.trim() || !this.activeId) {
+			if ((!this.draft.trim() && this.pendingMedia.length === 0) || !this.activeId) {
+				return;
+			}
+
+			if (this.isSendingMedia) {
 				return;
 			}
 
 			const content = this.draft;
+			const filesToUpload = [...this.pendingMedia];
 			this.draft = '';
-			this.$nextTick(() => this.autoGrow());
+			this.newMessageCount = 0;
 
 			const tempId = `temp-${Date.now()}`;
 			this.messages.push({
@@ -331,22 +328,36 @@ export default function chatInbox(
 				sender_id: this.userId,
 				sender_name: null,
 				content,
+				media: filesToUpload.map(f => ({id: f.id, url: f.url})),
 				created_at: null,
 				created_at_iso: new Date().toISOString(),
 				_pending: true,
 				_failed: false,
 			});
-			this.newMessageCount = 0;
+			this.pendingMedia = [];
+			this.$nextTick(() => this.scrollToBottom());
 
 			try {
+				let mediaIds = [];
+
+				if (filesToUpload.length > 0) {
+					this.isSendingMedia = true;
+					// Upload tuần tự — tránh spam server nếu user dán nhiều
+					// ảnh cùng lúc.
+					const uploaded = [];
+					for (const item of filesToUpload) {
+						uploaded.push(await this.uploadFile(item.file));
+						URL.revokeObjectURL(item.url);
+					}
+					mediaIds = uploaded.map(m => m.id);
+					this.isSendingMedia = false;
+				}
+
 				const res = await fetch(`/api/v1/chat/conversations/${this.activeId}/messages`, {
-					method: 'POST',
-					credentials: 'include',
-					headers: {
+					method: 'POST', credentials: 'include', headers: {
 						'Content-Type': 'application/json',
 						'X-XSRF-TOKEN': getCsrfTokenFromCookie(),
-					},
-					body: JSON.stringify({content}),
+					}, body: JSON.stringify({content, media_ids: mediaIds}),
 				});
 
 				if (!res.ok) {
@@ -360,6 +371,7 @@ export default function chatInbox(
 				}
 			}
 			catch (e) {
+				this.isSendingMedia = false;
 				const index = this.messages.findIndex((m) => m.id === tempId);
 				if (index !== -1) {
 					this.messages[index]._pending = false;
@@ -376,8 +388,7 @@ export default function chatInbox(
 				return;
 			}
 			el.scrollTo({
-				top: el.scrollHeight,
-				behavior: instant ? 'auto' : 'smooth',
+				top: el.scrollHeight, behavior: instant ? 'auto' : 'smooth',
 			});
 		},
 
@@ -407,6 +418,86 @@ export default function chatInbox(
 			}
 			e.preventDefault();
 			this.send();
+		},
+
+		handlePaste(event) {
+			if (!this.mediaEnabled) {
+				return;
+			}
+
+			const items = event.clipboardData?.items;
+
+			if (!items) {
+				return;
+			}
+
+			const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
+
+			if (imageItems.length === 0) {
+				return;
+			}
+
+			event.preventDefault();
+
+			for (const item of imageItems) {
+				const file = item.getAsFile();
+
+				if (file) {
+					this.addPendingFile(file);
+				}
+			}
+		},
+
+		openFilePicker() {
+			if (!this.mediaEnabled) {
+				return;
+			}
+			this.$refs.fileInput.click();
+		},
+
+		handleFileSelect(event) {
+			const files = Array.from(event.target.files || []);
+			for (const file of files) {
+				this.addPendingFile(file);
+			}
+			event.target.value = '';
+		},
+
+		addPendingFile(file) {
+			this.pendingMedia.push({
+				id: `local-${Date.now()}-${Math.random()}`,
+				file,
+				url: URL.createObjectURL(file),
+			});
+		},
+
+		removePendingMedia(id) {
+			const item = this.pendingMedia.find(m => m.id === id);
+
+			if (item) {
+				URL.revokeObjectURL(item.url);
+			}
+			this.pendingMedia = this.pendingMedia.filter(m => m.id !== id);
+		},
+
+		async uploadFile(file) {
+			const formData = new FormData();
+			formData.append('file', file);
+			formData.append('context', 'chat');
+
+			const res = await fetch('/api/v1/media', {
+				method: 'POST',
+				credentials: 'include',
+				headers: {'X-XSRF-TOKEN': getCsrfTokenFromCookie()},
+				body: formData,
+			});
+
+			if (!res.ok) {
+				throw new Error('upload failed');
+			}
+
+			const json = await res.json();
+			return json.data;
 		},
 	};
 }
