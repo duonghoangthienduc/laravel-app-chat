@@ -11,6 +11,13 @@ fi
 
 if [ -f artisan ]; then
   chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
+  if [ ! -L public/storage ]; then
+    echo "🔗 Creating storage symlink..."
+    php artisan storage:link
+    echo "✅ Storage symlink created."
+  else
+    echo "✅ Storage symlink already exists — skipping."
+  fi
 fi
 
 if [ -f artisan ] && [ "$RUN_MIGRATIONS" = "true" ]; then

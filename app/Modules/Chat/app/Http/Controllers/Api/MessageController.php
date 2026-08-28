@@ -3,8 +3,10 @@
 namespace Modules\Chat\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\Modules\OptionalModule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Modules\Chat\Http\Requests\StoreMessageRequest;
 use Modules\Chat\Services\ConversationService;
 use Modules\Chat\Services\MessageService;
 use Modules\Chat\Transformers\MessageResource;
@@ -44,7 +46,7 @@ class MessageController extends Controller{
 	/**
 	 * Store a newly created resource in storage.
 	 */
-	public function store(string $conversation, Request $request){
+	public function store(string $conversation, StoreMessageRequest $request){
 		$conversationModel = $this->conversationService->getConversationById($conversation);
 
 		abort_if(
@@ -52,12 +54,15 @@ class MessageController extends Controller{
 			403
 		);
 
-		$validated = $request->validate(['content' => 'required|string|max:5000']);
+		$mediaIds = OptionalModule::isActive('Media')
+			? $request->input('media_ids', [])
+			: [];
 
 		$message = $this->messageService->sendMessage(
 			$conversation,
 			Auth::id(),
-			$validated['content'],
+			$request->input('content'),
+			$mediaIds,
 		);
 
 		return new MessageResource($message);
