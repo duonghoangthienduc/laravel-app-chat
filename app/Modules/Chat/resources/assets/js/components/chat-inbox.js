@@ -2,17 +2,17 @@ import {avatarStyle, getInitials} from '../utils/avatar.js';
 import {getCsrfTokenFromCookie, getEcho} from "@/services/echo.js";
 import {formatDayLabel} from '../utils/time.js';
 
-export default function chatInbox(userId, initialConversationId = null, mediaEnabled = false, initialConversation = null, initialMessages = [], initialNextCursor = null, messagesPreloaded = false) {
+export default function chatInbox(userId, activeId = null, mediaEnabled = false, conversation = null,) {
 	const echo = getEcho();
 
 	return {
 		userId,
 		mediaEnabled,
-		conversations: initialConversation ? [initialConversation] : [],
-		activeId: initialConversationId,
+		conversations: conversation ? [conversation] : [],
+		activeId: activeId,
 		search: '',
-		messages: initialMessages,
-		loadingMessages: false,
+		messages: [],
+		loadingMessages: true,
 		draft: '',
 		otherTyping: false,
 		typingTimeout: null,
@@ -23,8 +23,7 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 		isNearBottom: true,
 		newMessageCount: 0,
 
-		nextCursor: initialNextCursor,
-		messagesPreloaded,
+		nextCursor: null,
 		loadingOlder: false,
 
 		pendingMedia: [],
@@ -94,7 +93,9 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 			}
 
 			const bottomThreshold = 150;
-			this.isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < bottomThreshold;
+			const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+			this.isNearBottom = distanceFromBottom <= bottomThreshold;
 
 			if (this.isNearBottom) {
 				this.newMessageCount = 0;
@@ -102,7 +103,8 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 
 			const topThreshold = 80;
 
-			if (el.scrollTop < topThreshold && this.nextCursor && !this.loadingOlder) {
+			if (el.scrollTop <= topThreshold && this.nextCursor && !this.loadingOlder) {
+				console.log('On Scroll load older message');
 				this.loadOlderMessages();
 			}
 		},
@@ -142,6 +144,25 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 			this.scrollToBottom();
 		},
 
+		messageContentClasses(group, msg) {
+			return ['text-[15px]', 'leading-relaxed', 'whitespace-pre-wrap', 'break-words', group.sender_id === this.userId ? 'text-white' : 'text-zinc-100', msg._pending ? 'opacity-60' : '', msg._failed ? 'ring-2 ring-red-500/60' : '',];
+		},
+
+		messageContentStyles(group) {
+			return {
+				padding: '10px 16px',
+				background: group.sender_id === this.userId ? 'rgba(99,102,241,.85)' : 'rgba(255,255,255,.06)',
+				border: group.sender_id === this.userId ? 'none' : '1px solid rgba(255,255,255,.08)',
+				'word-break': 'break-word',
+				'overflow-wrap': 'break-word',
+				'max-width': '100%',
+				width: 'fit-content',
+				'border-radius': '20px',
+				'backdrop-filter': 'blur(10px)',
+				'-webkit-backdrop-filter': 'blur(10px)',
+			};
+		},
+
 		subscribeToConversation(id) {
 			echo.private(`conversation.${id}`)
 				.listen('.message.sent', (message) => {
@@ -177,7 +198,7 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 					clearTimeout(this.typingTimeout);
 					this.typingTimeout = setTimeout(() => {
 						this.otherTyping = false;
-					}, 3000);
+					}, 5000);
 				});
 		},
 
@@ -193,87 +214,25 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 
 			this.typingWhisperTimer = setTimeout(() => {
 				this.typingWhisperTimer = null;
-			}, 2000);
-		},
-
-		initConnectionState() {
-			const conn = echo?.connector?.pusher?.connection;
-
-			if (!conn) {
-				return;
-			}
-
-			this.connectionState = conn.state;
-			conn.bind('state_change', (states) => {
-				this.connectionState = states.current;
-			});
-		},
-
-		setupResizeObserver() {
-			const el = this.$refs.scrollBox;
-
-			if (!el) {
-				return;
-			}
-
-			let timer;
-			this.resizeObserver = new ResizeObserver(() => {
-				clearTimeout(timer);
-				timer = setTimeout(() => {
-					if (this.isNearBottom) {
-						this.scrollToBottom();
-					}
-				}, 80);
-			});
-			this.resizeObserver.observe(el);
+			}, 5000);
 		},
 
 		async init() {
-
-			if (this.messagesPreloaded) {
-				this.$nextTick(() => this.scrollToBottom(true));
-			}
-
 			await fetch('/sanctum/csrf-cookie', {credentials: 'include'});
-			this.initConnectionState();
 
 			const res = await fetch('/api/v1/chat/conversations', {credentials: 'include'});
 			const json = await res.json();
 
 			const byId = new Map(this.conversations.map(c => [c.id, c]));
-
 			for (const c of json.data) {
 				byId.set(c.id, c);
 			}
 			this.conversations = Array.from(byId.values());
 
 			if (this.activeId) {
-				await this.ensureConversationLoaded(this.activeId);
-
-				if (this.messagesPreloaded) {
-					this.$nextTick(() => this.fillViewportIfNeeded());
-				}
-				else {
-					await this.loadMessages(this.activeId);
-				}
-
+				await this.loadMessages(this.activeId);
 				this.subscribeToConversation(this.activeId);
 			}
-
-			this.$nextTick(() => this.setupResizeObserver());
-		},
-
-		async ensureConversationLoaded(id) {
-			if (this.conversations.some(c => c.id === id)) {
-				return;
-			}
-
-			const res = await fetch(`/api/v1/chat/conversations/${id}`, {credentials: 'include'});
-			if (!res.ok) {
-				return;
-			}
-			const json = await res.json();
-			this.conversations.unshift(json.data);
 		},
 
 		async selectConversation(id) {
@@ -297,6 +256,7 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 			const res = await fetch(`/api/v1/chat/conversations/${conversationId}/messages`, {
 				credentials: 'include',
 			});
+
 			const data = await res.json();
 			this.messages = data.data.reverse();
 			this.nextCursor = data.meta?.next_cursor ?? null;
@@ -342,8 +302,6 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 
 				if (filesToUpload.length > 0) {
 					this.isSendingMedia = true;
-					// Upload tuần tự — tránh spam server nếu user dán nhiều
-					// ảnh cùng lúc.
 					const uploaded = [];
 					for (const item of filesToUpload) {
 						uploaded.push(await this.uploadFile(item.file));
@@ -393,14 +351,14 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 		},
 
 		fillViewportIfNeeded() {
-			const el = this.$refs.scrollBox;
-			if (!el || !this.nextCursor || this.loadingOlder) {
-				return;
-			}
-
-			if (el.scrollHeight <= el.clientHeight) {
-				this.loadOlderMessages();
-			}
+			// const el = this.$refs.scrollBox;
+			// if (!el || !this.nextCursor || this.loadingOlder) {
+			// 	return;
+			// }
+			//
+			// if (el.scrollHeight <= el.clientHeight) {
+			// 	this.loadOlderMessages();
+			// }
 		},
 
 		autoGrow() {
@@ -414,7 +372,7 @@ export default function chatInbox(userId, initialConversationId = null, mediaEna
 
 		handleEnter(e) {
 			if (e.shiftKey) {
-				return; // để mặc định trình duyệt tự xuống dòng
+				return;
 			}
 			e.preventDefault();
 			this.send();

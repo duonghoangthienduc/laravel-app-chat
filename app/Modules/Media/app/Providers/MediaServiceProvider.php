@@ -2,11 +2,11 @@
 
 namespace Modules\Media\Providers;
 
-use Illuminate\Foundation\AliasLoader;
-use Modules\Media\Facades\Media;
 use Modules\Media\Interfaces\MediaRepositoryInterface;
+use Modules\Media\Interfaces\MediaServiceInterface;
 use Modules\Media\Interfaces\MediaStorageInterface;
 use Modules\Media\Repositories\MediaRepository;
+use Modules\Media\Services\MediaService;
 use Modules\Media\Storage\LocalMediaStorage;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
@@ -52,13 +52,17 @@ class MediaServiceProvider extends ModuleServiceProvider{
 	public $bindings = [
 		MediaStorageInterface::class    => LocalMediaStorage::class,
 		MediaRepositoryInterface::class => MediaRepository::class,
+		MediaServiceInterface::class    => MediaService::class,
 	];
 
 
-	public function boot()
+	public function register()
 	: void{
-		parent::boot();
+		parent::register();
 
-		AliasLoader::getInstance()->alias('Media', Media::class);
+		$this->app->singleton(
+			MediaServiceInterface::class,
+			MediaService::class
+		);
 	}
 }

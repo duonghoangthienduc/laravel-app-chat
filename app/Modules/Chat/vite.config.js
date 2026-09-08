@@ -10,7 +10,7 @@ export default defineConfig({
 	},
 	plugins: [laravel({
 		input: ['resources/assets/js/app.js', 'resources/assets/js/sidebar.js'],
-		publicDirectory: '../../../public',   // relative to `root`, not absolute
+		publicDirectory: '../../../public',
 		buildDirectory: 'build-chat',
 	}),],
 	resolve: {

@@ -5,12 +5,13 @@ namespace Modules\Media\Services;
 use Illuminate\Http\UploadedFile;
 use Modules\Media\Enums\MediaType;
 use Modules\Media\Interfaces\MediaRepositoryInterface;
+use Modules\Media\Interfaces\MediaServiceInterface;
 use Modules\Media\Interfaces\MediaStorageInterface;
 use Modules\Media\Models\Media;
 use Modules\Media\Transformers\MediaResource;
 use Throwable;
 
-readonly class MediaService{
+readonly class MediaService implements MediaServiceInterface{
 
 	public function __construct(
 		private MediaStorageInterface $storage,

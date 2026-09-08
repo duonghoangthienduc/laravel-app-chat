@@ -8,6 +8,7 @@ use App\Support\Navigation\Facades\Navigation;
 use App\Support\Navigation\NavigationRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -35,6 +36,11 @@ class AppServiceProvider extends ServiceProvider{
 
 		$loader->alias('Navigation', Navigation::class);
 		$loader->alias('Dashboard', Dashboard::class);
+
+		Blade::anonymousComponentPath(
+			resource_path('views/app-components'),
+			'app-components'
+		);
 	}
 
 	/**
