@@ -5,13 +5,13 @@ namespace Modules\Media\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Modules\Media\Http\Requests\UploadMediaRequest;
-use Modules\Media\Services\MediaService;
+use Modules\Media\Interfaces\MediaServiceInterface;
 use Modules\Media\Transformers\MediaResource;
 
 class MediaController extends Controller{
 
 	public function __construct(
-		private readonly MediaService $mediaService,
+		private readonly MediaServiceInterface $mediaService,
 	){
 	}
 

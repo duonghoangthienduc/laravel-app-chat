@@ -8,14 +8,18 @@ use Modules\Chat\Events\MessageSent;
 use Modules\Chat\Interfaces\ConversationRepositoryInterface;
 use Modules\Chat\Interfaces\MessageMediaRepositoryInterface;
 use Modules\Chat\Interfaces\MessageRepositoryInterface;
-use Modules\Media\Facades\Media;
+use Modules\Media\Interfaces\MediaServiceInterface;
+
+//use Modules\Media\Facades\Media;
 
 readonly class MessageService{
 
 	public function __construct(
 		private MessageRepositoryInterface $messageRepository,
 		private MessageMediaRepositoryInterface $messageMediaRepository,
-		private ConversationRepositoryInterface $conversationRepository){
+		private ConversationRepositoryInterface $conversationRepository,
+		private MediaServiceInterface $mediaService,
+	){
 	}
 
 	public function getMessages(string $conversationId, int $limit = 30)
@@ -64,7 +68,7 @@ readonly class MessageService{
 
 		$mediaIds = $this->messageMediaRepository->getMediaIdsForMessage($messageId);
 
-		return Media::findMany($mediaIds);
+		return $this->mediaService->findMany($mediaIds);
 	}
 
 	private function attachMediaToCollection($messages)
@@ -79,7 +83,7 @@ readonly class MessageService{
 		$mediaIdsByMessage = $this->messageMediaRepository->getMediaIdsForMessages($messageIds);
 
 		$allMediaIds   = collect($mediaIdsByMessage)->flatten()->unique()->values()->all();
-		$resolvedMedia = collect(Media::findMany($allMediaIds))->keyBy('id');
+		$resolvedMedia = collect($this->mediaService->findMany($allMediaIds))->keyBy('id');
 
 		$messages->each(function ($message) use ($mediaIdsByMessage, $resolvedMedia){
 			$ids = $mediaIdsByMessage[$message->id] ?? [];

@@ -33,12 +33,11 @@ class FindUsers extends Component{
 	: void{
 		try{
 			$authUserId = Auth::id();
-			$conversation->getConversations($userId, $authUserId);
-
-			$this->redirect(route('chat.inbox'));
+			$this->redirect(route('chat.show',
+				$conversation->getConversations($userId, $authUserId)->uuid));
 		}catch (Throwable $e){
 			$this->dispatch('conversation-start-failed');
-			throw $e; // vẫn giữ log/report lỗi bình thường
+			throw $e;
 		}
 	}
 }

@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use Modules\Chat\Services\ConversationService;
 use Modules\Chat\Services\MessageService;
 use Modules\Chat\Transformers\ConversationResource;
-use Modules\Chat\Transformers\MessageResource;
 
 class ChatController extends Controller{
 
@@ -38,14 +37,9 @@ class ChatController extends Controller{
 			403
 		);
 
-		$messages = $this->messageService->getMessages($conversation->uuid, 10);
-		$items    = MessageResource::collection($messages->items())->resolve();
-
 		return view('chat::pages.show', [
 			'activeConversationId' => $conversation->uuid,
 			'activeConversation'   => new ConversationResource($conversation),
-			'initialMessages'      => array_reverse($items),
-			'initialNextCursor'    => $messages->nextCursor()?->encode(),
 			'initialMedia'         => OptionalModule::isActive('Media'),
 		]);
 	}
