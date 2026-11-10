@@ -6,6 +6,7 @@ export default defineConfig({
 	root: import.meta.dirname,
 	envDir: path.resolve(import.meta.dirname, '../../../'),
 	build: {
+		outDir: path.resolve(import.meta.dirname, '../../../public/build-log'),
 		emptyOutDir: true,
 	},
 	plugins: [

@@ -14,7 +14,7 @@ RUN apk add --no-cache \
     npm \
     $PHPIZE_DEPS
 
-RUN docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath pcntl exif opcache
+RUN docker-php-ext-install pdo pdo_pgsql pgsql pdo_mysql zip bcmath pcntl exif opcache
 
 RUN pecl install redis && docker-php-ext-enable redis
 

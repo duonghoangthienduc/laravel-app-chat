@@ -7,20 +7,33 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+      - vendor_data:/var/www/vendor
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
       - /var/www/node_modules
       - node_modules_data:/var/www/node_modules
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - RUN_MIGRATIONS=true
       - BUILD_ASSETS=true
+      - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-laravel}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-localdevpassword}
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
+      - REVERB_APP_ID=${REVERB_APP_ID:-local}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-secret}
+      - VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY:-local-key}
+      - VITE_REVERB_HOST=${VITE_REVERB_HOST:-localhost}
+      - VITE_REVERB_PORT=${VITE_REVERB_PORT:-8000}
+      - VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME:-http}
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
     command: ["php-fpm"]
     networks:
@@ -61,15 +74,15 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE:-laravel}
+      POSTGRES_USER: ${DB_USERNAME:-laravel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdevpassword}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - chat-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-laravel} -d ${DB_DATABASE:-laravel}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -97,16 +110,25 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+      - vendor_data:/var/www/vendor
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
+      - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-laravel}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-localdevpassword}
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
+      - REVERB_APP_ID=${REVERB_APP_ID:-local}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-local-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-local-secret}
     command: php -d max_execution_time=0 artisan reverb:start --host=0.0.0.0 --port=8080
     networks:
       - chat-network
@@ -127,12 +149,18 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+      - vendor_data:/var/www/vendor
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini:ro
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
+      - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-laravel}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
+      - DB_PASSWORD=${DB_PASSWORD:-localdevpassword}
       - REDIS_HOST=redis
       - REVERB_HOST=reverb
       - REVERB_PORT=8080
@@ -151,6 +179,7 @@ services:
 
 volumes:
   node_modules_data:
+  vendor_data:
   pgdata:
 
 networks:

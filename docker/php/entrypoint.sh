@@ -10,6 +10,11 @@ if [ "$DB_CONNECTION" = "pgsql" ]; then
 fi
 
 if [ -f artisan ]; then
+  if [ ! -f vendor/autoload.php ]; then
+    echo "📦 Installing PHP dependencies..."
+    composer install --no-interaction
+  fi
+
   chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
   if [ ! -L public/storage ]; then
     echo "🔗 Creating storage symlink..."
@@ -27,10 +32,18 @@ if [ -f artisan ] && [ "$RUN_MIGRATIONS" = "true" ]; then
 fi
 
 if [ -f package.json ] && [ "$BUILD_ASSETS" = "true" ]; then
-  echo "📦 Installing npm dependencies and building frontend assets..."
-  npm ci
-  npm run build:all
-  echo "✅ Frontend assets built."
+  if [ ! -x node_modules/.bin/vite ]; then
+    echo "📦 Installing npm dependencies..."
+    npm ci
+  fi
+
+  if [ ! -f public/build/manifest.json ] || [ ! -f public/build-log/manifest.json ]; then
+    echo "🏗️ Building frontend and module assets..."
+    npm run build:all
+    echo "✅ Frontend assets built."
+  else
+    echo "✅ Frontend manifests already exist — skipping asset build."
+  fi
 fi
 
 exec "$@"
